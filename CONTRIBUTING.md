@@ -1,7 +1,7 @@
 # Guia de Contribuição
 
 Este documento define as práticas e convenções adotadas no projeto. Todo membro da equipe — humano ou agente IA — deve segui-las.
-
+ 
 ---
 
 ## 1. Estratégia de branches principais

@@ -55,3 +55,11 @@ class DocenteResponse(UsuarioResponse):
     isCoordenador: bool = False
     disciplinas: List[str] = []
 
+
+class PaginatedUsuarios(BaseModel):
+    """Resposta paginada da listagem de usuários (RF007)."""
+    total: int
+    pagina: int
+    limite: int
+    usuarios: List[UsuarioResponse]
+

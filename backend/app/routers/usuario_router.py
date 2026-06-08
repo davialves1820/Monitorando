@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Query, Path
+from fastapi import APIRouter, status, Query, Path, Header, HTTPException
 from uuid import UUID
 from typing import Optional
 from app.models.enums import TipoPerfil
@@ -6,7 +6,9 @@ from app.models.usuario import (
     UsuarioCadastro,
     DiscenteResponse,
     DocenteResponse,
-    PaginatedUsuarios
+    PaginatedUsuarios,
+    PromoverRequest,
+    MonitorResponse
 )
 from app.services.usuario_service import usuario_service
 
@@ -89,7 +91,22 @@ def detalhar_usuario(
     id: UUID = Path(description="ID (UUID) do usuário a ser consultado"),
 ):
     usuario = usuario_service.buscar_usuario_por_id(id)
-    if usuario.perfil == TipoPerfil.DISCENTE:
+    if usuario.perfil == TipoPerfil.MONITOR:
+        return MonitorResponse(
+            id=usuario.id,
+            nome=usuario.nome,
+            email=usuario.email,
+            perfil=usuario.perfil,
+            ativo=usuario.ativo,
+            matricula=usuario.matricula,
+            curso=usuario.curso,
+            periodo=usuario.periodo,
+            disciplinasInteresse=usuario.disciplinasInteresse,
+            cargaHoraria=usuario.cargaHoraria,
+            disponivel=usuario.disponivel,
+            disciplinaVinculada=usuario.disciplinaVinculada,
+        )
+    elif usuario.perfil == TipoPerfil.DISCENTE:
         return DiscenteResponse(
             id=usuario.id,
             nome=usuario.nome,
@@ -113,3 +130,58 @@ def detalhar_usuario(
             isCoordenador=usuario.isCoordenador,
             disciplinas=usuario.disciplinas,
         )
+
+@router.patch("/{id}/promover", response_model=MonitorResponse, summary="Promover Aluno para Monitor")
+def promover_usuario(
+    id: UUID = Path(description="ID (UUID) do aluno a ser promovido"),
+    request: PromoverRequest = None,
+    x_perfil: Optional[str] = Header(None, alias="X-Perfil")
+):
+    if x_perfil != "COORDENADOR":
+        raise HTTPException(
+            status_code=403,
+            detail="Acesso negado: apenas coordenadores podem realizar esta ação."
+        )
+    if not request:
+        raise HTTPException(
+            status_code=400,
+            detail="Corpo da requisição é obrigatório."
+        )
+    usuario_promovido = usuario_service.promover_usuario(id, request)
+    return MonitorResponse(
+        id=usuario_promovido.id,
+        nome=usuario_promovido.nome,
+        email=usuario_promovido.email,
+        perfil=usuario_promovido.perfil,
+        ativo=usuario_promovido.ativo,
+        matricula=usuario_promovido.matricula,
+        curso=usuario_promovido.curso,
+        periodo=usuario_promovido.periodo,
+        disciplinasInteresse=usuario_promovido.disciplinasInteresse,
+        cargaHoraria=usuario_promovido.cargaHoraria,
+        disponivel=usuario_promovido.disponivel,
+        disciplinaVinculada=usuario_promovido.disciplinaVinculada
+    )
+
+@router.patch("/{id}/revogar", response_model=DiscenteResponse, summary="Revogar Monitor para Aluno")
+def revogar_monitor(
+    id: UUID = Path(description="ID (UUID) do monitor a ser revogado"),
+    x_perfil: Optional[str] = Header(None, alias="X-Perfil")
+):
+    if x_perfil != "COORDENADOR":
+        raise HTTPException(
+            status_code=403,
+            detail="Acesso negado: apenas coordenadores podem realizar esta ação."
+        )
+    usuario_revogado = usuario_service.revogar_monitor(id)
+    return DiscenteResponse(
+        id=usuario_revogado.id,
+        nome=usuario_revogado.nome,
+        email=usuario_revogado.email,
+        perfil=usuario_revogado.perfil,
+        ativo=usuario_revogado.ativo,
+        matricula=usuario_revogado.matricula,
+        curso=usuario_revogado.curso,
+        periodo=usuario_revogado.periodo,
+        disciplinasInteresse=usuario_revogado.disciplinasInteresse
+    )

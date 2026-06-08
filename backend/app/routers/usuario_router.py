@@ -1,9 +1,10 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, Query
 from app.models.enums import TipoPerfil
 from app.models.usuario import (
     UsuarioCadastro,
     DiscenteResponse,
-    DocenteResponse
+    DocenteResponse,
+    PaginatedUsuarios
 )
 from app.services.usuario_service import usuario_service
 
@@ -39,3 +40,20 @@ def cadastrar(cadastro: UsuarioCadastro):
             isCoordenador=usuario.isCoordenador,
             disciplinas=usuario.disciplinas
         )
+
+
+@router.get(
+    "",
+    response_model=PaginatedUsuarios,
+    summary="Listar usuários",
+    description=(
+        "Retorna todos os usuários cadastrados com paginação. "
+        "Limite padrão: 50 registros por página (RF007). "
+        "Máximo permitido: 200 registros por página."
+    ),
+)
+def listar_usuarios(
+    pagina: int = Query(default=1, ge=1, description="Número da página (começa em 1)"),
+    limite: int = Query(default=50, ge=1, le=200, description="Quantidade de registros por página (padrão: 50)"),
+) -> PaginatedUsuarios:
+    return usuario_service.listar_usuarios(pagina=pagina, limite=limite)

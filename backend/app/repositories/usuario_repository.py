@@ -49,6 +49,13 @@ class UsuarioRepository:
         return pagina, total
 
 
+    def update(self, usuario: Usuario) -> Optional[Usuario]:
+        for i, u in enumerate(self._usuarios):
+            if u.id == usuario.id:
+                self._usuarios[i] = usuario
+                return usuario
+        return None
+
     def find_by_id(self, id: UUID) -> Optional[Usuario]:
         for usuario in self._usuarios:
             if usuario.id == id:

@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from typing import Union, Optional
 from uuid import UUID
 from app.models.enums import TipoPerfil
-from app.models.usuario import UsuarioCadastro, Discente, Docente, UsuarioResponse, PaginatedUsuarios
+from app.models.usuario import UsuarioCadastro, Discente, Docente, UsuarioResponse, PaginatedUsuarios, Monitor, PromoverRequest
 from app.repositories.usuario_repository import usuario_repository
 
 class UsuarioService:
@@ -179,5 +179,69 @@ class UsuarioService:
                 detail=f"Usuário com id '{id}' não encontrado."
             )
         return usuario
+
+    def promover_usuario(self, id: UUID, request: PromoverRequest) -> Monitor:
+        usuario = self.buscar_usuario_por_id(id)
+        
+        if usuario.perfil == TipoPerfil.MONITOR:
+            raise HTTPException(
+                status_code=400,
+                detail="Usuário já é um monitor."
+            )
+        elif usuario.perfil != TipoPerfil.DISCENTE:
+            raise HTTPException(
+                status_code=400,
+                detail="Apenas discentes podem ser promovidos a monitor."
+            )
+            
+        if not request.disciplinaVinculada or not request.disciplinaVinculada.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="Disciplina vinculada é obrigatória."
+            )
+            
+        monitor = Monitor(
+            id=usuario.id,
+            nome=usuario.nome,
+            email=usuario.email,
+            senha=usuario.senha,
+            perfil=TipoPerfil.MONITOR,
+            ativo=usuario.ativo,
+            matricula=usuario.matricula,
+            curso=usuario.curso,
+            periodo=usuario.periodo,
+            disciplinasInteresse=usuario.disciplinasInteresse,
+            cargaHoraria=request.cargaHoraria,
+            disciplinaVinculada=request.disciplinaVinculada.strip(),
+            disponivel=True
+        )
+        
+        usuario_repository.update(monitor)
+        return monitor
+
+    def revogar_monitor(self, id: UUID) -> Discente:
+        usuario = self.buscar_usuario_por_id(id)
+        
+        if usuario.perfil != TipoPerfil.MONITOR:
+            raise HTTPException(
+                status_code=400,
+                detail="O usuário não é um monitor."
+            )
+            
+        aluno = Discente(
+            id=usuario.id,
+            nome=usuario.nome,
+            email=usuario.email,
+            senha=usuario.senha,
+            perfil=TipoPerfil.DISCENTE,
+            ativo=usuario.ativo,
+            matricula=usuario.matricula,
+            curso=usuario.curso,
+            periodo=usuario.periodo,
+            disciplinasInteresse=usuario.disciplinasInteresse
+        )
+        
+        usuario_repository.update(aluno)
+        return aluno
 
 usuario_service = UsuarioService()

@@ -13,6 +13,12 @@ class UsuarioRepository:
     def find_all(self) -> List[Usuario]:
         return self._usuarios
 
+    def find_all_paginated(self, skip: int, limit: int) -> tuple[List[Usuario], int]:
+        """Retorna a página solicitada e o total de registros."""
+        total = len(self._usuarios)
+        pagina = self._usuarios[skip: skip + limit]
+        return pagina, total
+
     def find_by_id(self, id: UUID) -> Optional[Usuario]:
         for usuario in self._usuarios:
             if usuario.id == id:

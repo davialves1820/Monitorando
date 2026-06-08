@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from typing import Union
+from typing import Union, Optional
 from uuid import UUID
 from app.models.enums import TipoPerfil
 from app.models.usuario import UsuarioCadastro, Discente, Docente, UsuarioResponse, PaginatedUsuarios
@@ -93,7 +93,6 @@ class UsuarioService:
         Lista todos os usuários com paginação.
         RF007: limite padrão de 50 registros por página.
         """
-        limite_padrao = 50
         limite_maximo = 200
 
         if limite > limite_maximo:
@@ -101,6 +100,57 @@ class UsuarioService:
 
         skip = (pagina - 1) * limite
         usuarios_db, total = usuario_repository.find_all_paginated(skip=skip, limit=limite)
+
+        usuarios_response = [
+            UsuarioResponse(
+                id=u.id,
+                nome=u.nome,
+                email=u.email,
+                perfil=u.perfil,
+                ativo=u.ativo,
+            )
+            for u in usuarios_db
+        ]
+
+        return PaginatedUsuarios(
+            total=total,
+            pagina=pagina,
+            limite=limite,
+            usuarios=usuarios_response,
+        )
+
+    def buscar_usuarios(
+        self,
+        nome: Optional[str],
+        matricula: Optional[str],
+        pagina: int,
+        limite: int,
+    ) -> PaginatedUsuarios:
+        """
+        Busca usuários com filtros opcionais de nome (parcial) e matrícula (exata).
+        RF008: retorna 404 quando nenhum resultado é encontrado.
+        """
+        limite_maximo = 200
+        if limite > limite_maximo:
+            limite = limite_maximo
+
+        skip = (pagina - 1) * limite
+        usuarios_db, total = usuario_repository.find_by_filters(
+            nome=nome,
+            matricula=matricula,
+            skip=skip,
+            limit=limite,
+        )
+
+        if total == 0:
+            detalhe = "Nenhum usuário encontrado"
+            if nome and matricula:
+                detalhe = f"Nenhum usuário encontrado com nome contendo '{nome}' e matrícula '{matricula}'."
+            elif nome:
+                detalhe = f"Nenhum usuário encontrado com nome contendo '{nome}'."
+            elif matricula:
+                detalhe = f"Nenhum usuário encontrado com matrícula '{matricula}'."
+            raise HTTPException(status_code=404, detail=detalhe)
 
         usuarios_response = [
             UsuarioResponse(

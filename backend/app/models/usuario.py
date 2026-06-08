@@ -23,6 +23,12 @@ class Docente(Usuario):
     isCoordenador: bool = False
     disciplinas: List[str] = []
 
+class Monitor(Discente):
+    perfil: TipoPerfil = TipoPerfil.MONITOR
+    cargaHoraria: int
+    disponivel: bool = True
+    disciplinaVinculada: str
+
 # Schemas de Entrada (Request Body)
 class UsuarioCadastro(BaseModel):
     nome: str
@@ -34,6 +40,10 @@ class UsuarioCadastro(BaseModel):
     siape: Optional[str] = None
     departamento: Optional[str] = None
     isCoordenador: Optional[bool] = False
+
+class PromoverRequest(BaseModel):
+    disciplinaVinculada: str
+    cargaHoraria: int = Field(..., ge=0)
 
 # Schemas de Saída (Response Body)
 class UsuarioResponse(BaseModel):
@@ -55,6 +65,11 @@ class DocenteResponse(UsuarioResponse):
     isCoordenador: bool = False
     disciplinas: List[str] = []
 
+class MonitorResponse(DiscenteResponse):
+    perfil: TipoPerfil = TipoPerfil.MONITOR
+    cargaHoraria: int
+    disponivel: bool
+    disciplinaVinculada: str
 
 class PaginatedUsuarios(BaseModel):
     """Resposta paginada da listagem de usuários (RF007)."""
@@ -62,4 +77,5 @@ class PaginatedUsuarios(BaseModel):
     pagina: int
     limite: int
     usuarios: List[UsuarioResponse]
+
 

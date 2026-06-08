@@ -441,3 +441,189 @@ class TestFiltrarUsuarios:
         data = response.json()
         assert data["total"] == 15
         assert len(data["usuarios"]) == 5  # 15 - 10 = 5 restantes
+
+
+# ===========================================================================
+# PROMOÇÃO E REVOGAÇÃO DE MONITORES (PATCH /usuarios/{id}/promover e /revogar)
+# ===========================================================================
+
+class TestPromocaoRevogacao:
+    def test_promover_discente_com_sucesso(self):
+        # 1. Criar um discente
+        aluno = _criar_discente()
+        aluno_id = aluno["id"]
+        
+        # 2. Promover discente a monitor
+        payload = {
+            "disciplinaVinculada": "Métodos de Projeto de Software",
+            "cargaHoraria": 12
+        }
+        headers = {"X-Perfil": "COORDENADOR"}
+        response = client.patch(f"/usuarios/{aluno_id}/promover", json=payload, headers=headers)
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == aluno_id
+        assert data["perfil"] == "MONITOR"
+        assert data["disciplinaVinculada"] == "Métodos de Projeto de Software"
+        assert data["cargaHoraria"] == 12
+        assert data["disponivel"] is True
+        
+        # 3. Verificar que o detalhe do usuário retorna MonitorResponse
+        detail_res = client.get(f"/usuarios/{aluno_id}")
+        assert detail_res.status_code == 200
+        detail_data = detail_res.json()
+        assert detail_data["perfil"] == "MONITOR"
+        assert detail_data["cargaHoraria"] == 12
+        assert detail_data["disciplinaVinculada"] == "Métodos de Projeto de Software"
+        assert detail_data["matricula"] == aluno["matricula"]
+
+    def test_promover_erro_sem_cabecalho_coordenador(self):
+        aluno = _criar_discente()
+        aluno_id = aluno["id"]
+        
+        payload = {
+            "disciplinaVinculada": "Métodos de Projeto de Software",
+            "cargaHoraria": 12
+        }
+        
+        # Sem cabeçalho
+        response = client.patch(f"/usuarios/{aluno_id}/promover", json=payload)
+        assert response.status_code == 403
+        assert "apenas coordenadores" in response.json()["detail"]
+        
+        # Cabeçalho incorreto
+        headers = {"X-Perfil": "DISCENTE"}
+        response = client.patch(f"/usuarios/{aluno_id}/promover", json=payload, headers=headers)
+        assert response.status_code == 403
+        assert "apenas coordenadores" in response.json()["detail"]
+
+    def test_promover_erro_usuario_inexistente(self):
+        fake_id = str(uuid4())
+        payload = {
+            "disciplinaVinculada": "MPS",
+            "cargaHoraria": 12
+        }
+        headers = {"X-Perfil": "COORDENADOR"}
+        response = client.patch(f"/usuarios/{fake_id}/promover", json=payload, headers=headers)
+        assert response.status_code == 404
+        assert "não encontrado" in response.json()["detail"]
+
+    def test_promover_erro_usuario_ja_monitor(self):
+        aluno = _criar_discente()
+        aluno_id = aluno["id"]
+        
+        payload = {
+            "disciplinaVinculada": "MPS",
+            "cargaHoraria": 12
+        }
+        headers = {"X-Perfil": "COORDENADOR"}
+        
+        # Primeira promoção
+        res1 = client.patch(f"/usuarios/{aluno_id}/promover", json=payload, headers=headers)
+        assert res1.status_code == 200
+        
+        # Segunda promoção
+        res2 = client.patch(f"/usuarios/{aluno_id}/promover", json=payload, headers=headers)
+        assert res2.status_code == 400
+        assert "já é um monitor" in res2.json()["detail"]
+
+    def test_promover_erro_usuario_docente(self):
+        docente = client.post("/usuarios", json=DOCENTE_PAYLOAD).json()
+        docente_id = docente["id"]
+        
+        payload = {
+            "disciplinaVinculada": "MPS",
+            "cargaHoraria": 12
+        }
+        headers = {"X-Perfil": "COORDENADOR"}
+        response = client.patch(f"/usuarios/{docente_id}/promover", json=payload, headers=headers)
+        assert response.status_code == 400
+        assert "Apenas discentes" in response.json()["detail"]
+
+    def test_promover_erro_carga_horaria_negativa(self):
+        aluno = _criar_discente()
+        aluno_id = aluno["id"]
+        
+        payload = {
+            "disciplinaVinculada": "MPS",
+            "cargaHoraria": -5
+        }
+        headers = {"X-Perfil": "COORDENADOR"}
+        response = client.patch(f"/usuarios/{aluno_id}/promover", json=payload, headers=headers)
+        # Pydantic deve rejeitar cargaHoraria menor que 0 com 422
+        assert response.status_code == 422
+
+    def test_promover_erro_disciplina_vazia(self):
+        aluno = _criar_discente()
+        aluno_id = aluno["id"]
+        
+        # Disciplina vazia
+        payload = {
+            "disciplinaVinculada": "   ",
+            "cargaHoraria": 12
+        }
+        headers = {"X-Perfil": "COORDENADOR"}
+        response = client.patch(f"/usuarios/{aluno_id}/promover", json=payload, headers=headers)
+        assert response.status_code == 400
+        assert "Disciplina vinculada é obrigatória" in response.json()["detail"]
+
+    def test_revogar_monitor_com_sucesso(self):
+        # 1. Criar e promover discente
+        aluno = _criar_discente()
+        aluno_id = aluno["id"]
+        
+        payload = {
+            "disciplinaVinculada": "MPS",
+            "cargaHoraria": 12
+        }
+        headers = {"X-Perfil": "COORDENADOR"}
+        res_promo = client.patch(f"/usuarios/{aluno_id}/promover", json=payload, headers=headers)
+        assert res_promo.status_code == 200
+        
+        # 2. Revogar monitor
+        res_revoke = client.patch(f"/usuarios/{aluno_id}/revogar", headers=headers)
+        assert res_revoke.status_code == 200
+        data = res_revoke.json()
+        assert data["id"] == aluno_id
+        assert data["perfil"] == "DISCENTE"
+        assert "disciplinaVinculada" not in data  # Como agora é Aluno/Discente, não tem esses campos no DiscenteResponse
+        
+        # 3. Detalhar usuário para certificar que voltou a ser DISCENTE
+        detail_res = client.get(f"/usuarios/{aluno_id}")
+        assert detail_res.status_code == 200
+        detail_data = detail_res.json()
+        assert detail_data["perfil"] == "DISCENTE"
+        assert "disciplinaVinculada" not in detail_data
+
+    def test_revogar_erro_sem_cabecalho_coordenador(self):
+        aluno = _criar_discente()
+        aluno_id = aluno["id"]
+        
+        # 1. Promover
+        headers = {"X-Perfil": "COORDENADOR"}
+        res_promo = client.patch(f"/usuarios/{aluno_id}/promover", json={"disciplinaVinculada": "MPS", "cargaHoraria": 12}, headers=headers)
+        assert res_promo.status_code == 200
+        
+        # 2. Revogar sem cabeçalho
+        response = client.patch(f"/usuarios/{aluno_id}/revogar")
+        assert response.status_code == 403
+        assert "apenas coordenadores" in response.json()["detail"]
+
+    def test_revogar_erro_usuario_nao_monitor(self):
+        # Aluno comum
+        aluno = _criar_discente()
+        aluno_id = aluno["id"]
+        
+        headers = {"X-Perfil": "COORDENADOR"}
+        response = client.patch(f"/usuarios/{aluno_id}/revogar", headers=headers)
+        assert response.status_code == 400
+        assert "não é um monitor" in response.json()["detail"]
+        
+        # Docente
+        docente = client.post("/usuarios", json=DOCENTE_PAYLOAD).json()
+        docente_id = docente["id"]
+        
+        response = client.patch(f"/usuarios/{docente_id}/revogar", headers=headers)
+        assert response.status_code == 400
+        assert "não é um monitor" in response.json()["detail"]

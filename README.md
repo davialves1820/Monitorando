@@ -101,8 +101,36 @@ Membros do corpo docente ou coordenadores com permissões administrativas globai
 
 ## Como Executar
 
-> 🚀 *Esta seção será atualizada com as instruções de instalação e execução ao longo do desenvolvimento.*
+### Backend (API)
 
+1. Acesse o diretório da API:
+```bash
+cd monitorando-api
+```
+
+2. Crie e ative um ambiente virtual:
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# Linux/macOS
+python3 -m venv venv
+source venv/bin/activate
+```
+
+3. Instale as dependências:
+```bash
+pip install -r requirements.txt
+```
+
+4. Execute o servidor de desenvolvimento:
+```bash
+uvicorn app.main:app --reload
+```
+
+A API estará disponível em: `http://localhost:8000`
+A documentação interativa (Swagger) estará disponível em: `http://localhost:8000/docs`
 ---
 
 ## Contribuindo

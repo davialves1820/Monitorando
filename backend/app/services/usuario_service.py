@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from typing import Union
+from uuid import UUID
 from app.models.enums import TipoPerfil
 from app.models.usuario import UsuarioCadastro, Discente, Docente, UsuarioResponse, PaginatedUsuarios
 from app.repositories.usuario_repository import usuario_repository
@@ -118,5 +119,15 @@ class UsuarioService:
             limite=limite,
             usuarios=usuarios_response,
         )
+
+    def buscar_usuario_por_id(self, id: UUID) -> Union[Discente, Docente]:
+        """Retorna um usuário pelo ID. Lança 404 se não encontrado."""
+        usuario = usuario_repository.find_by_id(id)
+        if usuario is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Usuário com id '{id}' não encontrado."
+            )
+        return usuario
 
 usuario_service = UsuarioService()

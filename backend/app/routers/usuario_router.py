@@ -1,4 +1,5 @@
-from fastapi import APIRouter, status, Query
+from fastapi import APIRouter, status, Query, Path
+from uuid import UUID
 from app.models.enums import TipoPerfil
 from app.models.usuario import (
     UsuarioCadastro,
@@ -57,3 +58,42 @@ def listar_usuarios(
     limite: int = Query(default=50, ge=1, le=200, description="Quantidade de registros por página (padrão: 50)"),
 ) -> PaginatedUsuarios:
     return usuario_service.listar_usuarios(pagina=pagina, limite=limite)
+
+
+@router.get(
+    "/{id}",
+    summary="Detalhar usuário",
+    description="Retorna os dados completos de um usuário específico pelo seu ID (UUID).",
+    responses={
+        200: {"description": "Usuário encontrado"},
+        404: {"description": "Usuário não encontrado"},
+    },
+)
+def detalhar_usuario(
+    id: UUID = Path(description="ID (UUID) do usuário a ser consultado"),
+):
+    usuario = usuario_service.buscar_usuario_por_id(id)
+    if usuario.perfil == TipoPerfil.DISCENTE:
+        return DiscenteResponse(
+            id=usuario.id,
+            nome=usuario.nome,
+            email=usuario.email,
+            perfil=usuario.perfil,
+            ativo=usuario.ativo,
+            matricula=usuario.matricula,
+            curso=usuario.curso,
+            periodo=usuario.periodo,
+            disciplinasInteresse=usuario.disciplinasInteresse,
+        )
+    else:
+        return DocenteResponse(
+            id=usuario.id,
+            nome=usuario.nome,
+            email=usuario.email,
+            perfil=usuario.perfil,
+            ativo=usuario.ativo,
+            siape=usuario.siape,
+            departamento=usuario.departamento,
+            isCoordenador=usuario.isCoordenador,
+            disciplinas=usuario.disciplinas,
+        )

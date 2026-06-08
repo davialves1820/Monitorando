@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from typing import Union
 from app.models.enums import TipoPerfil
-from app.models.usuario import UsuarioCadastro, Discente, Docente
+from app.models.usuario import UsuarioCadastro, Discente, Docente, UsuarioResponse, PaginatedUsuarios
 from app.repositories.usuario_repository import usuario_repository
 
 class UsuarioService:
@@ -86,5 +86,37 @@ class UsuarioService:
         # 6. Salvar na coleção em memória
         usuario_repository.add(usuario)
         return usuario
+
+    def listar_usuarios(self, pagina: int, limite: int) -> PaginatedUsuarios:
+        """
+        Lista todos os usuários com paginação.
+        RF007: limite padrão de 50 registros por página.
+        """
+        limite_padrao = 50
+        limite_maximo = 200
+
+        if limite > limite_maximo:
+            limite = limite_maximo
+
+        skip = (pagina - 1) * limite
+        usuarios_db, total = usuario_repository.find_all_paginated(skip=skip, limit=limite)
+
+        usuarios_response = [
+            UsuarioResponse(
+                id=u.id,
+                nome=u.nome,
+                email=u.email,
+                perfil=u.perfil,
+                ativo=u.ativo,
+            )
+            for u in usuarios_db
+        ]
+
+        return PaginatedUsuarios(
+            total=total,
+            pagina=pagina,
+            limite=limite,
+            usuarios=usuarios_response,
+        )
 
 usuario_service = UsuarioService()

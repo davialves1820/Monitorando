@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.routers import usuario_router
 
 app = FastAPI(
     title="Monitorando API",
@@ -15,6 +16,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(usuario_router)
+
 @app.get("/")
 def root():
     return {"message": "Monitorando API está rodando!"}
+

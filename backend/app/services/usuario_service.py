@@ -1,0 +1,90 @@
+from fastapi import HTTPException
+from typing import Union
+from app.models.enums import TipoPerfil
+from app.models.usuario import UsuarioCadastro, Discente, Docente
+from app.repositories.usuario_repository import usuario_repository
+
+class UsuarioService:
+    def cadastrar_usuario(self, cadastro: UsuarioCadastro) -> Union[Discente, Docente]:
+        # 1. Validar preenchimento dos campos obrigatórios comuns
+        if (
+            not cadastro.nome 
+            or not cadastro.nome.strip() 
+            or not cadastro.email 
+            or not cadastro.email.strip() 
+            or not cadastro.senha 
+            or not cadastro.senha.strip()
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Preencha todos os campos obrigatórios para continuar"
+            )
+
+        # 2. Validar e-mail institucional e determinar perfil (RN008)
+        email = cadastro.email.strip().lower()
+        if email.endswith("@discente.ufpb.br"):
+            perfil = TipoPerfil.DISCENTE
+        elif email.endswith("@ufpb.br") or email.endswith("@ci.ufpb.br"):
+            perfil = TipoPerfil.DOCENTE
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="E-mail inválido ou já cadastrado. Utilize seu e-mail institucional."
+            )
+
+        # 3. Validar se o e-mail já está cadastrado
+        if usuario_repository.find_by_email(email) is not None:
+            raise HTTPException(
+                status_code=400,
+                detail="E-mail inválido ou já cadastrado. Utilize seu e-mail institucional."
+            )
+
+        # 4. Validar política de senha (RN009)
+        senha = cadastro.senha
+        if (
+            not (8 <= len(senha) <= 100) 
+            or not any(c.isupper() for c in senha) 
+            or not any(c.isdigit() for c in senha)
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="A senha deve conter entre 8 e 100 caracteres, incluindo pelo menos uma letra maiúscula e um número."
+            )
+
+        # 5. Lógica específica por perfil
+        if perfil == TipoPerfil.DISCENTE:
+            # Matrícula é obrigatória para discentes
+            if not cadastro.matricula or not cadastro.matricula.strip():
+                raise HTTPException(
+                    status_code=400,
+                    detail="Preencha todos os campos obrigatórios para continuar"
+                )
+            
+            usuario = Discente(
+                nome=cadastro.nome.strip(),
+                email=email,
+                senha=senha,
+                perfil=perfil,
+                matricula=cadastro.matricula.strip(),
+                curso=cadastro.curso.strip() if cadastro.curso else "",
+                periodo=cadastro.periodo,
+                disciplinasInteresse=[]
+            )
+        else:
+            # Docente
+            usuario = Docente(
+                nome=cadastro.nome.strip(),
+                email=email,
+                senha=senha,
+                perfil=perfil,
+                siape=cadastro.siape.strip() if cadastro.siape else "",
+                departamento=cadastro.departamento.strip() if cadastro.departamento else "",
+                isCoordenador=cadastro.isCoordenador if cadastro.isCoordenador is not None else False,
+                disciplinas=[]
+            )
+
+        # 6. Salvar na coleção em memória
+        usuario_repository.add(usuario)
+        return usuario
+
+usuario_service = UsuarioService()

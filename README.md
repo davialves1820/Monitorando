@@ -105,7 +105,7 @@ Membros do corpo docente ou coordenadores com permissões administrativas globai
 
 1. Acesse o diretório da API:
 ```bash
-cd monitorando-api
+cd backend
 ```
 
 2. Crie e ative um ambiente virtual:

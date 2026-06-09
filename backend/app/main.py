@@ -3,6 +3,7 @@ from uuid import uuid4
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import usuario_router
+from app.routers.disciplinas import router as disciplinas_router
 from app.repositories.usuario_repository import usuario_repository
 from app.models.usuario import Usuario
 from app.models.enums import TipoPerfil
@@ -41,6 +42,7 @@ app.add_middleware(
 )
 
 app.include_router(usuario_router)
+app.include_router(disciplinas_router)
 
 @app.get("/")
 def root():

@@ -8,7 +8,8 @@ from app.models.usuario import (
     DocenteResponse,
     PaginatedUsuarios,
     PromoverRequest,
-    MonitorResponse
+    MonitorResponse,
+    LoginRequest
 )
 from app.services.usuario_service import usuario_service
 
@@ -24,6 +25,7 @@ def cadastrar(cadastro: UsuarioCadastro):
         return DiscenteResponse(
             id=usuario.id,
             nome=usuario.nome,
+            login=usuario.login,
             email=usuario.email,
             perfil=usuario.perfil,
             ativo=usuario.ativo,
@@ -36,6 +38,7 @@ def cadastrar(cadastro: UsuarioCadastro):
         return DocenteResponse(
             id=usuario.id,
             nome=usuario.nome,
+            login=usuario.login,
             email=usuario.email,
             perfil=usuario.perfil,
             ativo=usuario.ativo,
@@ -95,6 +98,7 @@ def detalhar_usuario(
         return MonitorResponse(
             id=usuario.id,
             nome=usuario.nome,
+            login=usuario.login,
             email=usuario.email,
             perfil=usuario.perfil,
             ativo=usuario.ativo,
@@ -110,6 +114,7 @@ def detalhar_usuario(
         return DiscenteResponse(
             id=usuario.id,
             nome=usuario.nome,
+            login=usuario.login,
             email=usuario.email,
             perfil=usuario.perfil,
             ativo=usuario.ativo,
@@ -122,6 +127,7 @@ def detalhar_usuario(
         return DocenteResponse(
             id=usuario.id,
             nome=usuario.nome,
+            login=usuario.login,
             email=usuario.email,
             perfil=usuario.perfil,
             ativo=usuario.ativo,
@@ -151,6 +157,7 @@ def promover_usuario(
     return MonitorResponse(
         id=usuario_promovido.id,
         nome=usuario_promovido.nome,
+        login=usuario_promovido.login,
         email=usuario_promovido.email,
         perfil=usuario_promovido.perfil,
         ativo=usuario_promovido.ativo,
@@ -177,6 +184,7 @@ def revogar_monitor(
     return DiscenteResponse(
         id=usuario_revogado.id,
         nome=usuario_revogado.nome,
+        login=usuario_revogado.login,
         email=usuario_revogado.email,
         perfil=usuario_revogado.perfil,
         ativo=usuario_revogado.ativo,
@@ -185,3 +193,49 @@ def revogar_monitor(
         periodo=usuario_revogado.periodo,
         disciplinasInteresse=usuario_revogado.disciplinasInteresse
     )
+
+@router.post("/login", status_code=status.HTTP_200_OK, summary="Realizar login do usuário")
+def login(login_data: LoginRequest):
+    usuario = usuario_service.login_usuario(login_data.login, login_data.senha)
+    if usuario.perfil == TipoPerfil.MONITOR:
+        return MonitorResponse(
+            id=usuario.id,
+            nome=usuario.nome,
+            login=usuario.login,
+            email=usuario.email,
+            perfil=usuario.perfil,
+            ativo=usuario.ativo,
+            matricula=usuario.matricula,
+            curso=usuario.curso,
+            periodo=usuario.periodo,
+            disciplinasInteresse=usuario.disciplinasInteresse,
+            cargaHoraria=usuario.cargaHoraria,
+            disponivel=usuario.disponivel,
+            disciplinaVinculada=usuario.disciplinaVinculada,
+        )
+    elif usuario.perfil == TipoPerfil.DISCENTE:
+        return DiscenteResponse(
+            id=usuario.id,
+            nome=usuario.nome,
+            login=usuario.login,
+            email=usuario.email,
+            perfil=usuario.perfil,
+            ativo=usuario.ativo,
+            matricula=usuario.matricula,
+            curso=usuario.curso,
+            periodo=usuario.periodo,
+            disciplinasInteresse=usuario.disciplinasInteresse,
+        )
+    else:
+        return DocenteResponse(
+            id=usuario.id,
+            nome=usuario.nome,
+            login=usuario.login,
+            email=usuario.email,
+            perfil=usuario.perfil,
+            ativo=usuario.ativo,
+            siape=usuario.siape,
+            departamento=usuario.departamento,
+            isCoordenador=usuario.isCoordenador,
+            disciplinas=usuario.disciplinas,
+        )

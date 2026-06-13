@@ -640,3 +640,101 @@ class TestPromocaoRevogacao:
         response = client.patch(f"/usuarios/{docente_id}/revogar", headers=headers)
         assert response.status_code == 400
         assert "não é um monitor" in response.json()["detail"]
+
+
+# ===========================================================================
+# VALIDAÇÃO E ERROS DE LOGIN (POST /usuarios/login)
+# ===========================================================================
+
+class TestLoginUsuario:
+    def test_login_sucesso(self):
+        # Cadastra um discente válido
+        _criar_discente(login="joaosilva")
+        
+        # Tenta realizar login
+        payload = {
+            "login": "joaosilva",
+            "senha": "Password123"
+        }
+        response = client.post("/usuarios/login", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["login"] == "joaosilva"
+        assert data["email"] == "joao.silva@discente.ufpb.br"
+        assert "senha" not in data
+
+    def test_login_limite_caracteres_valido(self):
+        # Login com exatamente 12 caracteres alfabéticos
+        login_12_chars = "abcdefghijkl"
+        _criar_discente(login=login_12_chars, email="outro@discente.ufpb.br")
+        
+        payload = {
+            "login": login_12_chars,
+            "senha": "Password123"
+        }
+        response = client.post("/usuarios/login", json=payload)
+        assert response.status_code == 200
+        assert response.json()["login"] == login_12_chars
+
+    def test_login_erro_login_vazio(self):
+        payload = {
+            "login": "",
+            "senha": "Password123"
+        }
+        response = client.post("/usuarios/login", json=payload)
+        assert response.status_code == 400
+        assert response.json()["detail"] == "O login não pode ser vazio."
+
+    def test_login_erro_login_espacos(self):
+        payload = {
+            "login": "    ",
+            "senha": "Password123"
+        }
+        response = client.post("/usuarios/login", json=payload)
+        assert response.status_code == 400
+        assert response.json()["detail"] == "O login não pode ser vazio."
+
+    def test_login_erro_login_muito_longo(self):
+        # 13 caracteres alfabéticos
+        payload = {
+            "login": "abcdefghijklm",
+            "senha": "Password123"
+        }
+        response = client.post("/usuarios/login", json=payload)
+        assert response.status_code == 400
+        assert response.json()["detail"] == "O login deve ter no máximo 12 caracteres."
+
+    def test_login_erro_login_contem_numeros(self):
+        payload = {
+            "login": "user123",
+            "senha": "Password123"
+        }
+        response = client.post("/usuarios/login", json=payload)
+        assert response.status_code == 400
+        assert response.json()["detail"] == "O login não pode conter números."
+
+    def test_login_erro_usuario_inexistente(self):
+        payload = {
+            "login": "inexistente",
+            "senha": "Password123"
+        }
+        response = client.post("/usuarios/login", json=payload)
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Login ou senha incorretos."
+
+    def test_login_erro_senha_incorreta(self):
+        _criar_discente(login="joaosilva")
+        payload = {
+            "login": "joaosilva",
+            "senha": "SenhaIncorreta"
+        }
+        response = client.post("/usuarios/login", json=payload)
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Login ou senha incorretos."
+
+    def test_cadastro_erro_login_invalido(self):
+        # Valida que as regras de login também barram o cadastro de usuários inválidos
+        payload = {**DISCENTE_PAYLOAD, "login": "logincom123"}
+        response = client.post("/usuarios", json=payload)
+        assert response.status_code == 400
+        assert response.json()["detail"] == "O login não pode conter números."

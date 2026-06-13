@@ -10,6 +10,14 @@ from uuid import uuid4
 client = TestClient(app)
 
 
+def _index_to_letters(index: int) -> str:
+    letters = ""
+    while index >= 0:
+        letters = chr(97 + (index % 26)) + letters
+        index = (index // 26) - 1
+    return letters
+
+
 # ---------------------------------------------------------------------------
 # Fixture: isola cada teste limpando o repositório em memória
 # ---------------------------------------------------------------------------
@@ -25,6 +33,7 @@ def clear_repository():
 # ---------------------------------------------------------------------------
 DISCENTE_PAYLOAD = {
     "nome": "João Silva",
+    "login": "joaosilva",
     "email": "joao.silva@discente.ufpb.br",
     "senha": "Password123",
     "matricula": "2023001234",
@@ -34,6 +43,7 @@ DISCENTE_PAYLOAD = {
 
 DOCENTE_PAYLOAD = {
     "nome": "Maria Souza",
+    "login": "mariasouza",
     "email": "maria.souza@ufpb.br",
     "senha": "DocentePass1",
     "siape": "1122334",
@@ -57,6 +67,7 @@ def _seed_discentes(quantidade: int, prefixo: str = "Aluno"):
             Discente(
                 id=uuid4(),
                 nome=f"{prefixo} {i + 1}",
+                login=f"aluno{_index_to_letters(i)}",
                 email=f"aluno{i + 1}@discente.ufpb.br",
                 senha="Hash123",
                 perfil=TipoPerfil.DISCENTE,
@@ -103,7 +114,7 @@ class TestCadastroUsuario:
         assert "senha" not in data
 
     def test_criar_docente_ci_com_sucesso(self):
-        payload = {"nome": "Carlos Roberto", "email": "carlos@ci.ufpb.br", "senha": "DocentePass2"}
+        payload = {"nome": "Carlos Roberto", "login": "carlosrob", "email": "carlos@ci.ufpb.br", "senha": "DocentePass2"}
         response = client.post("/usuarios", json=payload)
 
         assert response.status_code == 201
@@ -304,22 +315,22 @@ class TestFiltrarUsuarios:
     def _seed_mix(self):
         """Insere 3 discentes e 1 docente com nomes e matrículas conhecidos."""
         usuario_repository.add(Discente(
-            id=uuid4(), nome="Ana Paula", email="ana@discente.ufpb.br",
+            id=uuid4(), nome="Ana Paula", login="anapaula", email="ana@discente.ufpb.br",
             senha="Hash1", perfil=TipoPerfil.DISCENTE, ativo=True,
             matricula="2023000001", curso="CC", periodo=1,
         ))
         usuario_repository.add(Discente(
-            id=uuid4(), nome="Ana Beatriz", email="anab@discente.ufpb.br",
+            id=uuid4(), nome="Ana Beatriz", login="anabeatriz", email="anab@discente.ufpb.br",
             senha="Hash2", perfil=TipoPerfil.DISCENTE, ativo=True,
             matricula="2023000002", curso="SI", periodo=2,
         ))
         usuario_repository.add(Discente(
-            id=uuid4(), nome="Carlos Eduardo", email="carlos@discente.ufpb.br",
+            id=uuid4(), nome="Carlos Eduardo", login="carlosedu", email="carlos@discente.ufpb.br",
             senha="Hash3", perfil=TipoPerfil.DISCENTE, ativo=True,
             matricula="2023000003", curso="EC", periodo=3,
         ))
         usuario_repository.add(Docente(
-            id=uuid4(), nome="Ana Professora", email="ana.prof@ufpb.br",
+            id=uuid4(), nome="Ana Professora", login="anaprof", email="ana.prof@ufpb.br",
             senha="Hash4", perfil=TipoPerfil.DOCENTE, ativo=True,
         ))
 
@@ -413,6 +424,7 @@ class TestFiltrarUsuarios:
         for i in range(15):
             usuario_repository.add(Discente(
                 id=uuid4(), nome=f"Teste Usuario {i + 1}",
+                login=f"teste{_index_to_letters(i)}",
                 email=f"teste{i + 1}@discente.ufpb.br",
                 senha="Hash1", perfil=TipoPerfil.DISCENTE, ativo=True,
                 matricula=f"2024{i + 1:06d}",
@@ -430,6 +442,7 @@ class TestFiltrarUsuarios:
         for i in range(15):
             usuario_repository.add(Discente(
                 id=uuid4(), nome=f"Teste Usuario {i + 1}",
+                login=f"teste{_index_to_letters(i)}",
                 email=f"teste{i + 1}@discente.ufpb.br",
                 senha="Hash1", perfil=TipoPerfil.DISCENTE, ativo=True,
                 matricula=f"2024{i + 1:06d}",

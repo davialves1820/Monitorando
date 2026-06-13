@@ -117,6 +117,7 @@ class UsuarioService:
             UsuarioResponse(
                 id=u.id,
                 nome=u.nome,
+                login=u.login,
                 email=u.email,
                 perfil=u.perfil,
                 ativo=u.ativo,
@@ -168,6 +169,7 @@ class UsuarioService:
             UsuarioResponse(
                 id=u.id,
                 nome=u.nome,
+                login=u.login,
                 email=u.email,
                 perfil=u.perfil,
                 ativo=u.ativo,

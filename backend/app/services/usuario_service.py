@@ -4,10 +4,20 @@ from uuid import UUID
 from app.models.enums import TipoPerfil
 from app.models.usuario import UsuarioCadastro, Discente, Docente, UsuarioResponse, PaginatedUsuarios, Monitor, PromoverRequest
 from app.repositories.usuario_repository import usuario_repository
+from app.exceptions import (
+    LoginException,
+    LoginVazioException,
+    LoginMuitoLongoException,
+    LoginContemNumerosException,
+    CredenciaisInvalidasException
+)
 
 class UsuarioService:
     def cadastrar_usuario(self, cadastro: UsuarioCadastro) -> Union[Discente, Docente]:
-        # 1. Validar preenchimento dos campos obrigatórios comuns
+        # 1. Validar as regras do login
+        self.validar_login(cadastro.login)
+
+        # 2. Validar preenchimento dos campos obrigatórios comuns
         if (
             not cadastro.nome 
             or not cadastro.nome.strip() 
@@ -21,7 +31,7 @@ class UsuarioService:
                 detail="Preencha todos os campos obrigatórios para continuar"
             )
 
-        # 2. Validar e-mail institucional e determinar perfil (RN008)
+        # 3. Validar e-mail institucional e determinar perfil (RN008)
         email = cadastro.email.strip().lower()
         if email.endswith("@discente.ufpb.br"):
             perfil = TipoPerfil.DISCENTE
@@ -33,14 +43,14 @@ class UsuarioService:
                 detail="E-mail inválido ou já cadastrado. Utilize seu e-mail institucional."
             )
 
-        # 3. Validar se o e-mail já está cadastrado
+        # 4. Validar se o e-mail já está cadastrado
         if usuario_repository.find_by_email(email) is not None:
             raise HTTPException(
                 status_code=400,
                 detail="E-mail inválido ou já cadastrado. Utilize seu e-mail institucional."
             )
 
-        # 4. Validar política de senha (RN009)
+        # 5. Validar política de senha (RN009)
         senha = cadastro.senha
         if (
             not (8 <= len(senha) <= 100) 
@@ -52,7 +62,7 @@ class UsuarioService:
                 detail="A senha deve conter entre 8 e 100 caracteres, incluindo pelo menos uma letra maiúscula e um número."
             )
 
-        # 5. Lógica específica por perfil
+        # 6. Lógica específica por perfil
         if perfil == TipoPerfil.DISCENTE:
             # Matrícula é obrigatória para discentes
             if not cadastro.matricula or not cadastro.matricula.strip():
@@ -63,6 +73,7 @@ class UsuarioService:
             
             usuario = Discente(
                 nome=cadastro.nome.strip(),
+                login=cadastro.login.strip(),
                 email=email,
                 senha=senha,
                 perfil=perfil,
@@ -75,6 +86,7 @@ class UsuarioService:
             # Docente
             usuario = Docente(
                 nome=cadastro.nome.strip(),
+                login=cadastro.login.strip(),
                 email=email,
                 senha=senha,
                 perfil=perfil,
@@ -84,7 +96,7 @@ class UsuarioService:
                 disciplinas=[]
             )
 
-        # 6. Salvar na coleção em memória
+        # 7. Salvar na coleção em memória
         usuario_repository.add(usuario)
         return usuario
 
@@ -203,6 +215,7 @@ class UsuarioService:
         monitor = Monitor(
             id=usuario.id,
             nome=usuario.nome,
+            login=usuario.login,
             email=usuario.email,
             senha=usuario.senha,
             perfil=TipoPerfil.MONITOR,
@@ -231,6 +244,7 @@ class UsuarioService:
         aluno = Discente(
             id=usuario.id,
             nome=usuario.nome,
+            login=usuario.login,
             email=usuario.email,
             senha=usuario.senha,
             perfil=TipoPerfil.DISCENTE,
@@ -243,5 +257,22 @@ class UsuarioService:
         
         usuario_repository.update(aluno)
         return aluno
+
+    def validar_login(self, login: str) -> None:
+        if not login or not login.strip():
+            raise LoginVazioException()
+        if len(login) > 12:
+            raise LoginMuitoLongoException()
+        if any(char.isdigit() for char in login):
+            raise LoginContemNumerosException()
+
+    def login_usuario(self, login: str, senha: str) -> Union[Discente, Docente, Monitor]:
+        self.validar_login(login)
+        usuario = usuario_repository.find_by_login(login.strip())
+        if usuario is None:
+            raise CredenciaisInvalidasException()
+        if usuario.senha != senha:
+            raise CredenciaisInvalidasException()
+        return usuario
 
 usuario_service = UsuarioService()

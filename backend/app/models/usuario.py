@@ -47,6 +47,10 @@ class PromoverRequest(BaseModel):
     disciplinaVinculada: str
     cargaHoraria: int = Field(..., ge=0)
 
+class LoginRequest(BaseModel):
+    login: str
+    senha: str
+
 # Schemas de Saída (Response Body)
 class UsuarioResponse(BaseModel):
     id: UUID

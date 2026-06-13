@@ -6,6 +6,7 @@ from app.models.enums import TipoPerfil
 class Usuario(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     nome: str
+    login: str
     email: EmailStr
     senha: str
     perfil: TipoPerfil
@@ -32,6 +33,7 @@ class Monitor(Discente):
 # Schemas de Entrada (Request Body)
 class UsuarioCadastro(BaseModel):
     nome: str
+    login: str
     email: EmailStr
     senha: str
     matricula: Optional[str] = None
@@ -49,6 +51,7 @@ class PromoverRequest(BaseModel):
 class UsuarioResponse(BaseModel):
     id: UUID
     nome: str
+    login: str
     email: EmailStr
     perfil: TipoPerfil
     ativo: bool

@@ -68,5 +68,11 @@ class UsuarioRepository:
                 return usuario
         return None
 
+    def find_by_login(self, login: str) -> Optional[Usuario]:
+        for usuario in self._usuarios:
+            if usuario.login == login:
+                return usuario
+        return None
+
 # Instância global para simular o banco de dados em memória
 usuario_repository = UsuarioRepository()

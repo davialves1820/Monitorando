@@ -25,3 +25,10 @@ class CredenciaisInvalidasException(LoginException):
     def __init__(self, message="Login ou senha incorretos."):
         self.message = message
         super().__init__(self.message)
+
+class IOException(Exception):
+    """Exceção lançada para erros de Entrada/Saída (E/S) no sistema de arquivos."""
+    def __init__(self, message="Erro de Entrada/Saída."):
+        self.message = message
+        super().__init__(self.message)
+

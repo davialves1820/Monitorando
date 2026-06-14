@@ -19,13 +19,15 @@ def _index_to_letters(index: int) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Fixture: isola cada teste limpando o repositório em memória
+# Fixture: isola cada teste limpando o repositório em memória e no disco
 # ---------------------------------------------------------------------------
 @pytest.fixture(autouse=True)
 def clear_repository():
-    usuario_repository._usuarios.clear()
+    usuario_repository.filepath = "usuarios_test.bin"
+    usuario_repository.clear()
     yield
-    usuario_repository._usuarios.clear()
+    usuario_repository.clear()
+
 
 
 # ---------------------------------------------------------------------------
@@ -738,3 +740,102 @@ class TestLoginUsuario:
         response = client.post("/usuarios", json=payload)
         assert response.status_code == 400
         assert response.json()["detail"] == "O login não pode conter números."
+
+
+# ===========================================================================
+# PERSISTÊNCIA EM ARQUIVO BINÁRIO (Issue #24)
+# ===========================================================================
+import os
+from app.exceptions import IOException
+from app.repositories.usuario_repository import UsuarioRepository
+
+class TestPersistenciaUsuario:
+    def test_salvar_cria_arquivo_no_disco(self):
+        assert not os.path.exists("usuarios_test.bin")
+        
+        # Criando e adicionando discente diretamente pelo repositório
+        usuario = Discente(
+            id=uuid4(),
+            nome="Test Persistência",
+            login="testpersist",
+            email="test@discente.ufpb.br",
+            senha="Password123",
+            perfil=TipoPerfil.DISCENTE,
+            ativo=True,
+            matricula="2023000999",
+            curso="CC"
+        )
+        usuario_repository.add(usuario)
+        
+        # Verifica se o arquivo foi criado no disco
+        assert os.path.exists("usuarios_test.bin")
+        assert os.path.getsize("usuarios_test.bin") > 0
+
+    def test_recuperar_dados_apos_inicializacao(self):
+        usuario = Discente(
+            id=uuid4(),
+            nome="Test Persistência 2",
+            login="testpersisttwo",
+            email="test2@discente.ufpb.br",
+            senha="Password123",
+            perfil=TipoPerfil.DISCENTE,
+            ativo=True,
+            matricula="2023000998",
+            curso="CC"
+        )
+        usuario_repository.add(usuario)
+        
+        # Cria um novo repositório apontando para o mesmo arquivo para simular reinicialização
+        novo_repo = UsuarioRepository(filepath="usuarios_test.bin")
+        usuarios_carregados = novo_repo.find_all()
+        
+        assert len(usuarios_carregados) == 1
+        assert usuarios_carregados[0].nome == "Test Persistência 2"
+        assert usuarios_carregados[0].login == "testpersisttwo"
+        assert usuarios_carregados[0].email == "test2@discente.ufpb.br"
+
+    def test_update_salva_no_disco(self):
+        usuario = Discente(
+            id=uuid4(),
+            nome="Test Persistência 3",
+            login="testpersistthree",
+            email="test3@discente.ufpb.br",
+            senha="Password123",
+            perfil=TipoPerfil.DISCENTE,
+            ativo=True,
+            matricula="2023000997",
+            curso="CC"
+        )
+        usuario_repository.add(usuario)
+        
+        # Atualiza o nome do usuário
+        usuario.nome = "Test Persistência Alterado"
+        usuario_repository.update(usuario)
+        
+        # Novo repo deve carregar o nome alterado
+        novo_repo = UsuarioRepository(filepath="usuarios_test.bin")
+        usuarios_carregados = novo_repo.find_all()
+        assert len(usuarios_carregados) == 1
+        assert usuarios_carregados[0].nome == "Test Persistência Alterado"
+
+    def test_salvar_trata_excecao_io_exception(self):
+        # Configura um caminho inválido (ex: um diretório sem permissão de escrita ou nome de arquivo vazio/inválido)
+        # Em Windows, caminhos com caracteres inválidos como "|" ou caminhos para diretórios inexistentes lançam OSError.
+        repo_ruim = UsuarioRepository(filepath="caminho_invalido_que_nao_existe/usuarios.bin")
+        usuario = Discente(
+            id=uuid4(),
+            nome="Test Falha",
+            login="testfalha",
+            email="testfalha@discente.ufpb.br",
+            senha="Password123",
+            perfil=TipoPerfil.DISCENTE,
+            ativo=True,
+            matricula="2023000996",
+            curso="CC"
+        )
+        
+        with pytest.raises(IOException) as exc_info:
+            repo_ruim.add(usuario)
+        
+        assert "Erro ao salvar dados" in str(exc_info.value)
+

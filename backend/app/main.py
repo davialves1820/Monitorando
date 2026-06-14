@@ -8,7 +8,7 @@ from app.routers.disciplinas import router as disciplinas_router
 from app.repositories.usuario_repository import usuario_repository
 from app.models.usuario import Usuario
 from app.models.enums import TipoPerfil
-from app.exceptions import LoginException
+from app.exceptions import LoginException, IOException
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -55,6 +55,13 @@ app.add_middleware(
 async def login_exception_handler(request: Request, exc: LoginException):
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": exc.message if hasattr(exc, "message") else str(exc)}
+    )
+
+@app.exception_handler(IOException)
+async def io_exception_handler(request: Request, exc: IOException):
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": exc.message if hasattr(exc, "message") else str(exc)}
     )
 

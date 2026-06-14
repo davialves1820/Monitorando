@@ -19,13 +19,15 @@ def _index_to_letters(index: int) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Fixture: isola cada teste limpando o repositório em memória
+# Fixture: isola cada teste limpando o repositório em memória e no disco
 # ---------------------------------------------------------------------------
 @pytest.fixture(autouse=True)
 def clear_repository():
-    usuario_repository._usuarios.clear()
+    usuario_repository.filepath = "usuarios_test.bin"
+    usuario_repository.clear()
     yield
-    usuario_repository._usuarios.clear()
+    usuario_repository.clear()
+
 
 
 # ---------------------------------------------------------------------------

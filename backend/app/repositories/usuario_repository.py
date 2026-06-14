@@ -40,6 +40,7 @@ class UsuarioRepository:
 
     def add(self, usuario: Usuario) -> Usuario:
         self._usuarios.append(usuario)
+        self._save_to_file()
         return usuario
 
     def find_all(self) -> List[Usuario]:
@@ -85,6 +86,7 @@ class UsuarioRepository:
         for i, u in enumerate(self._usuarios):
             if u.id == usuario.id:
                 self._usuarios[i] = usuario
+                self._save_to_file()
                 return usuario
         return None
 

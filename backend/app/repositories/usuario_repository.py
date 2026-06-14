@@ -1,10 +1,42 @@
+import os
+import pickle
 from typing import List, Optional
 from uuid import UUID
 from app.models.usuario import Usuario
+from app.exceptions import IOException
 
 class UsuarioRepository:
-    def __init__(self):
+    def __init__(self, filepath: str = "usuarios.bin"):
+        self.filepath = filepath
         self._usuarios: List[Usuario] = []
+        self._load_from_file()
+
+    def _save_to_file(self) -> None:
+        try:
+            with open(self.filepath, "wb") as f:
+                pickle.dump(self._usuarios, f)
+        except (OSError, pickle.PickleError) as e:
+            raise IOException(f"Erro ao salvar dados no arquivo binário: {e}")
+
+    def _load_from_file(self) -> None:
+        if not os.path.exists(self.filepath):
+            self._usuarios = []
+            return
+        try:
+            with open(self.filepath, "rb") as f:
+                self._usuarios = pickle.load(f)
+        except FileNotFoundError:
+            self._usuarios = []
+        except (OSError, pickle.PickleError) as e:
+            raise IOException(f"Erro ao carregar dados do arquivo binário: {e}")
+
+    def clear(self) -> None:
+        self._usuarios.clear()
+        if os.path.exists(self.filepath):
+            try:
+                os.remove(self.filepath)
+            except OSError as e:
+                raise IOException(f"Erro ao remover arquivo de dados: {e}")
 
     def add(self, usuario: Usuario) -> Usuario:
         self._usuarios.append(usuario)

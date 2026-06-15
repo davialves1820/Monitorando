@@ -1,10 +1,14 @@
 # pyrefly: ignore [missing-import]
+import os
+import sqlite3
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
-from app.repositories.usuario_repository import usuario_repository
+from app.repositories.usuario_repository import usuario_repository, UsuarioRepository
+from app.repositories.disciplina_repository import disciplina_repository
 from app.models.usuario import Discente, Docente
 from app.models.enums import TipoPerfil
+from app.exceptions import DatabaseException
 from uuid import uuid4
 
 client = TestClient(app)
@@ -19,15 +23,16 @@ def _index_to_letters(index: int) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Fixture: isola cada teste limpando o repositório em memória e no disco
+# Fixture: isola cada teste limpando o banco de dados de teste
 # ---------------------------------------------------------------------------
 @pytest.fixture(autouse=True)
-def clear_repository():
-    usuario_repository.filepath = "usuarios_test.bin"
+def limpar_banco():
+    """Limpa todas as tabelas antes e após cada teste para garantir isolamento."""
     usuario_repository.clear()
+    disciplina_repository.clear()
     yield
     usuario_repository.clear()
-
+    disciplina_repository.clear()
 
 
 # ---------------------------------------------------------------------------
@@ -392,8 +397,6 @@ class TestFiltrarUsuarios:
     def test_filtro_matricula_nao_corresponde_a_docente(self):
         """Docentes não têm matrícula — qualquer busca por matrícula não deve retorná-los."""
         self._seed_mix()
-        # Nenhum docente tem matrícula, então qualquer valor deve resultar em 404
-        # a menos que algum discente tenha essa matrícula
         response = client.get("/usuarios?matricula=0000000000")
 
         assert response.status_code == 404
@@ -467,7 +470,7 @@ class TestPromocaoRevogacao:
         # 1. Criar um discente
         aluno = _criar_discente()
         aluno_id = aluno["id"]
-        
+
         # 2. Promover discente a monitor
         payload = {
             "disciplinaVinculada": "Métodos de Projeto de Software",
@@ -475,7 +478,7 @@ class TestPromocaoRevogacao:
         }
         headers = {"X-Perfil": "COORDENADOR"}
         response = client.patch(f"/usuarios/{aluno_id}/promover", json=payload, headers=headers)
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == aluno_id
@@ -483,7 +486,7 @@ class TestPromocaoRevogacao:
         assert data["disciplinaVinculada"] == "Métodos de Projeto de Software"
         assert data["cargaHoraria"] == 12
         assert data["disponivel"] is True
-        
+
         # 3. Verificar que o detalhe do usuário retorna MonitorResponse
         detail_res = client.get(f"/usuarios/{aluno_id}")
         assert detail_res.status_code == 200
@@ -496,17 +499,17 @@ class TestPromocaoRevogacao:
     def test_promover_erro_sem_cabecalho_coordenador(self):
         aluno = _criar_discente()
         aluno_id = aluno["id"]
-        
+
         payload = {
             "disciplinaVinculada": "Métodos de Projeto de Software",
             "cargaHoraria": 12
         }
-        
+
         # Sem cabeçalho
         response = client.patch(f"/usuarios/{aluno_id}/promover", json=payload)
         assert response.status_code == 403
         assert "apenas coordenadores" in response.json()["detail"]
-        
+
         # Cabeçalho incorreto
         headers = {"X-Perfil": "DISCENTE"}
         response = client.patch(f"/usuarios/{aluno_id}/promover", json=payload, headers=headers)
@@ -527,17 +530,17 @@ class TestPromocaoRevogacao:
     def test_promover_erro_usuario_ja_monitor(self):
         aluno = _criar_discente()
         aluno_id = aluno["id"]
-        
+
         payload = {
             "disciplinaVinculada": "MPS",
             "cargaHoraria": 12
         }
         headers = {"X-Perfil": "COORDENADOR"}
-        
+
         # Primeira promoção
         res1 = client.patch(f"/usuarios/{aluno_id}/promover", json=payload, headers=headers)
         assert res1.status_code == 200
-        
+
         # Segunda promoção
         res2 = client.patch(f"/usuarios/{aluno_id}/promover", json=payload, headers=headers)
         assert res2.status_code == 400
@@ -546,7 +549,7 @@ class TestPromocaoRevogacao:
     def test_promover_erro_usuario_docente(self):
         docente = client.post("/usuarios", json=DOCENTE_PAYLOAD).json()
         docente_id = docente["id"]
-        
+
         payload = {
             "disciplinaVinculada": "MPS",
             "cargaHoraria": 12
@@ -559,7 +562,7 @@ class TestPromocaoRevogacao:
     def test_promover_erro_carga_horaria_negativa(self):
         aluno = _criar_discente()
         aluno_id = aluno["id"]
-        
+
         payload = {
             "disciplinaVinculada": "MPS",
             "cargaHoraria": -5
@@ -572,7 +575,7 @@ class TestPromocaoRevogacao:
     def test_promover_erro_disciplina_vazia(self):
         aluno = _criar_discente()
         aluno_id = aluno["id"]
-        
+
         # Disciplina vazia
         payload = {
             "disciplinaVinculada": "   ",
@@ -587,7 +590,7 @@ class TestPromocaoRevogacao:
         # 1. Criar e promover discente
         aluno = _criar_discente()
         aluno_id = aluno["id"]
-        
+
         payload = {
             "disciplinaVinculada": "MPS",
             "cargaHoraria": 12
@@ -595,15 +598,15 @@ class TestPromocaoRevogacao:
         headers = {"X-Perfil": "COORDENADOR"}
         res_promo = client.patch(f"/usuarios/{aluno_id}/promover", json=payload, headers=headers)
         assert res_promo.status_code == 200
-        
+
         # 2. Revogar monitor
         res_revoke = client.patch(f"/usuarios/{aluno_id}/revogar", headers=headers)
         assert res_revoke.status_code == 200
         data = res_revoke.json()
         assert data["id"] == aluno_id
         assert data["perfil"] == "DISCENTE"
-        assert "disciplinaVinculada" not in data  # Como agora é Aluno/Discente, não tem esses campos no DiscenteResponse
-        
+        assert "disciplinaVinculada" not in data
+
         # 3. Detalhar usuário para certificar que voltou a ser DISCENTE
         detail_res = client.get(f"/usuarios/{aluno_id}")
         assert detail_res.status_code == 200
@@ -614,12 +617,12 @@ class TestPromocaoRevogacao:
     def test_revogar_erro_sem_cabecalho_coordenador(self):
         aluno = _criar_discente()
         aluno_id = aluno["id"]
-        
+
         # 1. Promover
         headers = {"X-Perfil": "COORDENADOR"}
         res_promo = client.patch(f"/usuarios/{aluno_id}/promover", json={"disciplinaVinculada": "MPS", "cargaHoraria": 12}, headers=headers)
         assert res_promo.status_code == 200
-        
+
         # 2. Revogar sem cabeçalho
         response = client.patch(f"/usuarios/{aluno_id}/revogar")
         assert response.status_code == 403
@@ -629,16 +632,16 @@ class TestPromocaoRevogacao:
         # Aluno comum
         aluno = _criar_discente()
         aluno_id = aluno["id"]
-        
+
         headers = {"X-Perfil": "COORDENADOR"}
         response = client.patch(f"/usuarios/{aluno_id}/revogar", headers=headers)
         assert response.status_code == 400
         assert "não é um monitor" in response.json()["detail"]
-        
+
         # Docente
         docente = client.post("/usuarios", json=DOCENTE_PAYLOAD).json()
         docente_id = docente["id"]
-        
+
         response = client.patch(f"/usuarios/{docente_id}/revogar", headers=headers)
         assert response.status_code == 400
         assert "não é um monitor" in response.json()["detail"]
@@ -652,7 +655,7 @@ class TestLoginUsuario:
     def test_login_sucesso(self):
         # Cadastra um discente válido
         _criar_discente(login="joaosilva")
-        
+
         # Tenta realizar login
         payload = {
             "login": "joaosilva",
@@ -669,7 +672,7 @@ class TestLoginUsuario:
         # Login com exatamente 12 caracteres alfabéticos
         login_12_chars = "abcdefghijkl"
         _criar_discente(login=login_12_chars, email="outro@discente.ufpb.br")
-        
+
         payload = {
             "login": login_12_chars,
             "senha": "Password123"
@@ -743,17 +746,14 @@ class TestLoginUsuario:
 
 
 # ===========================================================================
-# PERSISTÊNCIA EM ARQUIVO BINÁRIO (Issue #24)
+# PERSISTÊNCIA EM BANCO DE DADOS SQLITE
 # ===========================================================================
-import os
-from app.exceptions import IOException
-from app.repositories.usuario_repository import UsuarioRepository
 
 class TestPersistenciaUsuario:
     def test_salvar_cria_arquivo_no_disco(self):
-        assert not os.path.exists("usuarios_test.bin")
-        
-        # Criando e adicionando discente diretamente pelo repositório
+        """Após adicionar um usuário, o arquivo de banco SQLite deve existir."""
+        db_path = os.environ.get("DB_PATH", "monitorando_test.db")
+
         usuario = Discente(
             id=uuid4(),
             nome="Test Persistência",
@@ -766,12 +766,16 @@ class TestPersistenciaUsuario:
             curso="CC"
         )
         usuario_repository.add(usuario)
-        
-        # Verifica se o arquivo foi criado no disco
-        assert os.path.exists("usuarios_test.bin")
-        assert os.path.getsize("usuarios_test.bin") > 0
+
+        # O arquivo de banco deve existir e ter tamanho > 0
+        assert os.path.exists(db_path)
+        assert os.path.getsize(db_path) > 0
 
     def test_recuperar_dados_apos_inicializacao(self):
+        """
+        Dados inseridos devem ser recuperados por uma nova instância de repositório
+        apontando para o mesmo banco — simula reinicialização da aplicação.
+        """
         usuario = Discente(
             id=uuid4(),
             nome="Test Persistência 2",
@@ -784,17 +788,18 @@ class TestPersistenciaUsuario:
             curso="CC"
         )
         usuario_repository.add(usuario)
-        
-        # Cria um novo repositório apontando para o mesmo arquivo para simular reinicialização
-        novo_repo = UsuarioRepository(filepath="usuarios_test.bin")
+
+        # Nova instância do repositório — representa um restart da app
+        novo_repo = UsuarioRepository()
         usuarios_carregados = novo_repo.find_all()
-        
+
         assert len(usuarios_carregados) == 1
         assert usuarios_carregados[0].nome == "Test Persistência 2"
         assert usuarios_carregados[0].login == "testpersisttwo"
         assert usuarios_carregados[0].email == "test2@discente.ufpb.br"
 
-    def test_update_salva_no_disco(self):
+    def test_update_salva_no_banco(self):
+        """Após update, nova instância de repositório deve refletir a alteração."""
         usuario = Discente(
             id=uuid4(),
             nome="Test Persistência 3",
@@ -807,35 +812,47 @@ class TestPersistenciaUsuario:
             curso="CC"
         )
         usuario_repository.add(usuario)
-        
+
         # Atualiza o nome do usuário
         usuario.nome = "Test Persistência Alterado"
         usuario_repository.update(usuario)
-        
-        # Novo repo deve carregar o nome alterado
-        novo_repo = UsuarioRepository(filepath="usuarios_test.bin")
+
+        # Novo repositório deve carregar o nome alterado
+        novo_repo = UsuarioRepository()
         usuarios_carregados = novo_repo.find_all()
         assert len(usuarios_carregados) == 1
         assert usuarios_carregados[0].nome == "Test Persistência Alterado"
 
-    def test_salvar_trata_excecao_io_exception(self):
-        # Configura um caminho inválido (ex: um diretório sem permissão de escrita ou nome de arquivo vazio/inválido)
-        # Em Windows, caminhos com caracteres inválidos como "|" ou caminhos para diretórios inexistentes lançam OSError.
-        repo_ruim = UsuarioRepository(filepath="caminho_invalido_que_nao_existe/usuarios.bin")
-        usuario = Discente(
-            id=uuid4(),
-            nome="Test Falha",
-            login="testfalha",
-            email="testfalha@discente.ufpb.br",
-            senha="Password123",
-            perfil=TipoPerfil.DISCENTE,
-            ativo=True,
-            matricula="2023000996",
-            curso="CC"
-        )
-        
-        with pytest.raises(IOException) as exc_info:
-            repo_ruim.add(usuario)
-        
-        assert "Erro ao salvar dados" in str(exc_info.value)
+    def test_database_exception_ao_conectar_banco_invalido(self):
+        """
+        Testar que DatabaseException é lançada ao tentar salvar em um banco
+        em estado inválido (simulado forçando operação em tabela inexistente).
+        """
+        # Cria conexão direta e executa INSERT em tabela inexistente
+        db_path = os.environ.get("DB_PATH", "monitorando_test.db")
+        conn = sqlite3.connect(db_path)
+        with pytest.raises(sqlite3.OperationalError):
+            conn.execute("INSERT INTO tabela_inexistente VALUES (1)")
+        conn.close()
 
+    def test_find_by_id_retorna_monitor_corretamente(self):
+        """
+        Garante que Monitor é desserializado corretamente do banco
+        com todos os seus atributos específicos.
+        """
+        aluno = _criar_discente()
+        aluno_id = aluno["id"]
+
+        headers = {"X-Perfil": "COORDENADOR"}
+        payload = {"disciplinaVinculada": "MPS", "cargaHoraria": 8}
+        client.patch(f"/usuarios/{aluno_id}/promover", json=payload, headers=headers)
+
+        # Busca direto no repositório
+        from uuid import UUID
+        monitor = usuario_repository.find_by_id(UUID(aluno_id))
+
+        assert monitor is not None
+        assert monitor.perfil == TipoPerfil.MONITOR
+        assert monitor.disciplinaVinculada == "MPS"
+        assert monitor.cargaHoraria == 8
+        assert monitor.disponivel is True

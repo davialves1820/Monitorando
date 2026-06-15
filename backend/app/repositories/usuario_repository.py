@@ -1,56 +1,224 @@
-import os
-import pickle
+"""
+Repositório de usuários com persistência em banco de dados SQLite.
+
+Responsabilidades:
+- Mapear objetos de domínio (Discente, Docente, Monitor) para linhas SQL.
+- Executar operações CRUD sobre a tabela `usuarios`.
+- Converter erros sqlite3.DatabaseError em DatabaseException.
+"""
+
+import json
+import sqlite3
 from typing import List, Optional
 from uuid import UUID
-from app.models.usuario import Usuario
-from app.exceptions import IOException
+
+from app.database import get_connection
+from app.exceptions import DatabaseException
+from app.models.enums import TipoPerfil
+from app.models.usuario import Discente, Docente, Monitor, Usuario
+
+# ---------------------------------------------------------------------------
+# Constantes
+# ---------------------------------------------------------------------------
+_TIPO_DISCENTE = "DISCENTE"
+_TIPO_DOCENTE  = "DOCENTE"
+_TIPO_MONITOR  = "MONITOR"
+
+
+def _serializar_lista(lista: List[str]) -> str:
+    """Converte uma lista de strings para JSON (armazenamento em TEXT)."""
+    return json.dumps(lista, ensure_ascii=False)
+
+
+def _deserializar_lista(texto: Optional[str]) -> List[str]:
+    """Converte JSON armazenado em TEXT de volta para lista de strings."""
+    if not texto:
+        return []
+    return json.loads(texto)
+
+
+def _row_para_usuario(row: sqlite3.Row) -> Usuario:
+    """
+    Converte uma linha do banco de dados no objeto de domínio correto
+    (Discente, Docente ou Monitor), baseado na coluna `tipo`.
+    """
+    tipo = row["tipo"]
+
+    if tipo == _TIPO_MONITOR:
+        return Monitor(
+            id=UUID(row["id"]),
+            nome=row["nome"],
+            login=row["login"],
+            email=row["email"],
+            senha=row["senha"],
+            perfil=TipoPerfil(row["perfil"]),
+            ativo=bool(row["ativo"]),
+            matricula=row["matricula"] or "",
+            curso=row["curso"] or "",
+            periodo=row["periodo"],
+            disciplinasInteresse=_deserializar_lista(row["disciplinas_interesse"]),
+            cargaHoraria=row["carga_horaria"] or 0,
+            disponivel=bool(row["disponivel"]) if row["disponivel"] is not None else True,
+            disciplinaVinculada=row["disciplina_vinculada"] or "",
+        )
+
+    if tipo == _TIPO_DISCENTE:
+        return Discente(
+            id=UUID(row["id"]),
+            nome=row["nome"],
+            login=row["login"],
+            email=row["email"],
+            senha=row["senha"],
+            perfil=TipoPerfil(row["perfil"]),
+            ativo=bool(row["ativo"]),
+            matricula=row["matricula"] or "",
+            curso=row["curso"] or "",
+            periodo=row["periodo"],
+            disciplinasInteresse=_deserializar_lista(row["disciplinas_interesse"]),
+        )
+
+    # Docente (tipo == _TIPO_DOCENTE ou qualquer outro)
+    return Docente(
+        id=UUID(row["id"]),
+        nome=row["nome"],
+        login=row["login"],
+        email=row["email"],
+        senha=row["senha"],
+        perfil=TipoPerfil(row["perfil"]),
+        ativo=bool(row["ativo"]),
+        siape=row["siape"] or "",
+        departamento=row["departamento"] or "",
+        isCoordenador=bool(row["is_coordenador"]) if row["is_coordenador"] is not None else False,
+        disciplinas=_deserializar_lista(row["disciplinas_docente"]),
+    )
+
+
+def _usuario_para_params(usuario: Usuario) -> dict:
+    """
+    Converte um objeto de domínio em um dicionário de parâmetros para INSERT/UPDATE.
+    Usa discriminador `tipo` para representar a herança no modelo relacional.
+    """
+    params: dict = {
+        "id":          str(usuario.id),
+        "nome":        usuario.nome,
+        "login":       usuario.login,
+        "email":       usuario.email,
+        "senha":       usuario.senha,
+        "perfil":      usuario.perfil.value,
+        "ativo":       int(usuario.ativo),
+        # Atributos específicos — preenchidos conforme o tipo
+        "matricula":               None,
+        "curso":                   None,
+        "periodo":                 None,
+        "disciplinas_interesse":   None,
+        "siape":                   None,
+        "departamento":            None,
+        "is_coordenador":          None,
+        "disciplinas_docente":     None,
+        "carga_horaria":           None,
+        "disponivel":              None,
+        "disciplina_vinculada":    None,
+    }
+
+    if isinstance(usuario, Monitor):
+        params["tipo"]                   = _TIPO_MONITOR
+        params["matricula"]              = usuario.matricula
+        params["curso"]                  = usuario.curso
+        params["periodo"]                = usuario.periodo
+        params["disciplinas_interesse"]  = _serializar_lista(usuario.disciplinasInteresse)
+        params["carga_horaria"]          = usuario.cargaHoraria
+        params["disponivel"]             = int(usuario.disponivel)
+        params["disciplina_vinculada"]   = usuario.disciplinaVinculada
+
+    elif isinstance(usuario, Discente):
+        params["tipo"]                   = _TIPO_DISCENTE
+        params["matricula"]              = usuario.matricula
+        params["curso"]                  = usuario.curso
+        params["periodo"]                = usuario.periodo
+        params["disciplinas_interesse"]  = _serializar_lista(usuario.disciplinasInteresse)
+
+    else:  # Docente
+        params["tipo"]                   = _TIPO_DOCENTE
+        params["siape"]                  = getattr(usuario, "siape", "")
+        params["departamento"]           = getattr(usuario, "departamento", "")
+        params["is_coordenador"]         = int(getattr(usuario, "isCoordenador", False))
+        params["disciplinas_docente"]    = _serializar_lista(getattr(usuario, "disciplinas", []))
+
+    return params
+
 
 class UsuarioRepository:
-    def __init__(self, filepath: str = "usuarios.bin"):
-        self.filepath = filepath
-        self._usuarios: List[Usuario] = []
-        self._load_from_file()
+    """
+    Repositório de usuários com persistência em SQLite.
 
-    def _save_to_file(self) -> None:
-        try:
-            with open(self.filepath, "wb") as f:
-                pickle.dump(self._usuarios, f)
-        except (OSError, pickle.PickleError) as e:
-            raise IOException(f"Erro ao salvar dados no arquivo binário: {e}")
-
-    def _load_from_file(self) -> None:
-        if not os.path.exists(self.filepath):
-            self._usuarios = []
-            return
-        try:
-            with open(self.filepath, "rb") as f:
-                self._usuarios = pickle.load(f)
-        except FileNotFoundError:
-            self._usuarios = []
-        except (OSError, pickle.PickleError) as e:
-            raise IOException(f"Erro ao carregar dados do arquivo binário: {e}")
+    Todos os métodos abrem e fecham sua própria conexão (padrão conexão curta),
+    garantindo que cada operação seja atômica e thread-safe para o contexto
+    da aplicação.
+    """
 
     def clear(self) -> None:
-        self._usuarios.clear()
-        if os.path.exists(self.filepath):
-            try:
-                os.remove(self.filepath)
-            except OSError as e:
-                raise IOException(f"Erro ao remover arquivo de dados: {e}")
+        """Remove todos os registros da tabela usuarios (usado em testes)."""
+        try:
+            with get_connection() as conn:
+                conn.execute("DELETE FROM usuarios")
+        except sqlite3.DatabaseError as e:
+            raise DatabaseException(f"Erro ao limpar tabela de usuários: {e}")
 
     def add(self, usuario: Usuario) -> Usuario:
-        self._usuarios.append(usuario)
-        self._save_to_file()
+        """
+        Persiste um novo usuário no banco de dados.
+
+        Raises:
+            DatabaseException: em caso de falha de escrita (ex.: UNIQUE constraint).
+        """
+        params = _usuario_para_params(usuario)
+        sql = """
+            INSERT INTO usuarios (
+                id, nome, login, email, senha, perfil, ativo, tipo,
+                matricula, curso, periodo, disciplinas_interesse,
+                siape, departamento, is_coordenador, disciplinas_docente,
+                carga_horaria, disponivel, disciplina_vinculada
+            ) VALUES (
+                :id, :nome, :login, :email, :senha, :perfil, :ativo, :tipo,
+                :matricula, :curso, :periodo, :disciplinas_interesse,
+                :siape, :departamento, :is_coordenador, :disciplinas_docente,
+                :carga_horaria, :disponivel, :disciplina_vinculada
+            )
+        """
+        try:
+            with get_connection() as conn:
+                conn.execute(sql, params)
+        except sqlite3.DatabaseError as e:
+            raise DatabaseException(f"Erro ao salvar usuário: {e}")
         return usuario
 
     def find_all(self) -> List[Usuario]:
-        return self._usuarios
+        """Retorna todos os usuários cadastrados."""
+        try:
+            with get_connection() as conn:
+                rows = conn.execute("SELECT * FROM usuarios").fetchall()
+            return [_row_para_usuario(r) for r in rows]
+        except sqlite3.DatabaseError as e:
+            raise DatabaseException(f"Erro ao listar usuários: {e}")
 
     def find_all_paginated(self, skip: int, limit: int) -> tuple[List[Usuario], int]:
-        """Retorna a página solicitada e o total de registros."""
-        total = len(self._usuarios)
-        pagina = self._usuarios[skip: skip + limit]
-        return pagina, total
+        """
+        Retorna a página solicitada e o total de registros.
+
+        Args:
+            skip:  número de registros a pular (offset).
+            limit: tamanho da página.
+        """
+        try:
+            with get_connection() as conn:
+                total = conn.execute("SELECT COUNT(*) FROM usuarios").fetchone()[0]
+                rows  = conn.execute(
+                    "SELECT * FROM usuarios LIMIT :limit OFFSET :skip",
+                    {"limit": limit, "skip": skip}
+                ).fetchall()
+            return [_row_para_usuario(r) for r in rows], total
+        except sqlite3.DatabaseError as e:
+            raise DatabaseException(f"Erro ao listar usuários paginados: {e}")
 
     def find_by_filters(
         self,
@@ -63,50 +231,99 @@ class UsuarioRepository:
         Filtra usuários por nome parcial (case-insensitive) e/ou matrícula exata.
         Retorna a fatia paginada e o total de resultados filtrados.
         """
-        resultado = self._usuarios
+        conditions: List[str] = []
+        params: dict = {}
 
         if nome:
-            nome_lower = nome.strip().lower()
-            resultado = [u for u in resultado if nome_lower in u.nome.lower()]
+            conditions.append("LOWER(nome) LIKE :nome_like")
+            params["nome_like"] = f"%{nome.strip().lower()}%"
 
         if matricula:
-            matricula_strip = matricula.strip()
-            # Apenas Discente tem o atributo 'matricula'
-            resultado = [
-                u for u in resultado
-                if hasattr(u, "matricula") and u.matricula == matricula_strip
-            ]
+            conditions.append("matricula = :matricula")
+            params["matricula"] = matricula.strip()
 
-        total = len(resultado)
-        pagina = resultado[skip: skip + limit]
-        return pagina, total
+        where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
 
+        try:
+            with get_connection() as conn:
+                total = conn.execute(
+                    f"SELECT COUNT(*) FROM usuarios {where}", params
+                ).fetchone()[0]
+
+                params["limit"] = limit
+                params["skip"]  = skip
+                rows = conn.execute(
+                    f"SELECT * FROM usuarios {where} LIMIT :limit OFFSET :skip",
+                    params
+                ).fetchall()
+
+            return [_row_para_usuario(r) for r in rows], total
+        except sqlite3.DatabaseError as e:
+            raise DatabaseException(f"Erro ao filtrar usuários: {e}")
 
     def update(self, usuario: Usuario) -> Optional[Usuario]:
-        for i, u in enumerate(self._usuarios):
-            if u.id == usuario.id:
-                self._usuarios[i] = usuario
-                self._save_to_file()
-                return usuario
-        return None
+        """
+        Atualiza todos os campos de um usuário existente.
+
+        Returns:
+            O usuário atualizado, ou None se o ID não for encontrado.
+        """
+        params = _usuario_para_params(usuario)
+        sql = """
+            UPDATE usuarios SET
+                nome = :nome, login = :login, email = :email, senha = :senha,
+                perfil = :perfil, ativo = :ativo, tipo = :tipo,
+                matricula = :matricula, curso = :curso, periodo = :periodo,
+                disciplinas_interesse = :disciplinas_interesse,
+                siape = :siape, departamento = :departamento,
+                is_coordenador = :is_coordenador,
+                disciplinas_docente = :disciplinas_docente,
+                carga_horaria = :carga_horaria, disponivel = :disponivel,
+                disciplina_vinculada = :disciplina_vinculada
+            WHERE id = :id
+        """
+        try:
+            with get_connection() as conn:
+                cursor = conn.execute(sql, params)
+                if cursor.rowcount == 0:
+                    return None
+        except sqlite3.DatabaseError as e:
+            raise DatabaseException(f"Erro ao atualizar usuário: {e}")
+        return usuario
 
     def find_by_id(self, id: UUID) -> Optional[Usuario]:
-        for usuario in self._usuarios:
-            if usuario.id == id:
-                return usuario
-        return None
+        """Busca um usuário pelo ID (UUID). Retorna None se não encontrado."""
+        try:
+            with get_connection() as conn:
+                row = conn.execute(
+                    "SELECT * FROM usuarios WHERE id = ?", (str(id),)
+                ).fetchone()
+            return _row_para_usuario(row) if row else None
+        except sqlite3.DatabaseError as e:
+            raise DatabaseException(f"Erro ao buscar usuário por ID: {e}")
 
     def find_by_email(self, email: str) -> Optional[Usuario]:
-        for usuario in self._usuarios:
-            if usuario.email == email:
-                return usuario
-        return None
+        """Busca um usuário pelo e-mail. Retorna None se não encontrado."""
+        try:
+            with get_connection() as conn:
+                row = conn.execute(
+                    "SELECT * FROM usuarios WHERE email = ?", (email,)
+                ).fetchone()
+            return _row_para_usuario(row) if row else None
+        except sqlite3.DatabaseError as e:
+            raise DatabaseException(f"Erro ao buscar usuário por e-mail: {e}")
 
     def find_by_login(self, login: str) -> Optional[Usuario]:
-        for usuario in self._usuarios:
-            if usuario.login == login:
-                return usuario
-        return None
+        """Busca um usuário pelo login. Retorna None se não encontrado."""
+        try:
+            with get_connection() as conn:
+                row = conn.execute(
+                    "SELECT * FROM usuarios WHERE login = ?", (login,)
+                ).fetchone()
+            return _row_para_usuario(row) if row else None
+        except sqlite3.DatabaseError as e:
+            raise DatabaseException(f"Erro ao buscar usuário por login: {e}")
 
-# Instância global para simular o banco de dados em memória
+
+# Instância global — mesma interface de antes, agora com SQLite por baixo
 usuario_repository = UsuarioRepository()

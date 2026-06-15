@@ -32,3 +32,16 @@ class IOException(Exception):
         self.message = message
         super().__init__(self.message)
 
+
+class DatabaseException(Exception):
+    """
+    Exceção lançada para erros de acesso ao banco de dados.
+
+    Encapsula falhas de sqlite3.DatabaseError / sqlite3.OperationalError,
+    análogo ao SQLException do Java, isolando a infra de banco da camada
+    de domínio e serviço.
+    """
+    def __init__(self, message="Erro de acesso ao banco de dados."):
+        self.message = message
+        super().__init__(self.message)
+

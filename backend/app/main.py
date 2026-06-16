@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import inicializar_banco
 from app.routers import usuario_router
 from app.routers.disciplinas import router as disciplinas_router
-from app.exceptions import LoginException, IOException, DatabaseException
+from app.exceptions import LoginException, IOException, DatabaseException, SenhaException
 
 
 @asynccontextmanager
@@ -40,6 +40,13 @@ async def login_exception_handler(request: Request, exc: LoginException):
         content={"detail": exc.message if hasattr(exc, "message") else str(exc)}
     )
 
+
+@app.exception_handler(SenhaException)
+async def senha_exception_handler(request: Request, exc: SenhaException):
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": exc.message if hasattr(exc, "message") else str(exc)}
+    )
 
 @app.exception_handler(IOException)
 async def io_exception_handler(request: Request, exc: IOException):

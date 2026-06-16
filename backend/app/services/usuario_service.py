@@ -9,7 +9,12 @@ from app.exceptions import (
     LoginVazioException,
     LoginMuitoLongoException,
     LoginContemNumerosException,
-    CredenciaisInvalidasException
+    CredenciaisInvalidasException,
+    SenhaCurtaException,
+    SenhaSemLetraMaiusculaException,
+    SenhaSemLetraMinusculaException,
+    SenhaSemNumeroException,
+    SenhaSemCaractereEspecialException
 )
 
 class UsuarioService:
@@ -50,17 +55,9 @@ class UsuarioService:
                 detail="E-mail inválido ou já cadastrado. Utilize seu e-mail institucional."
             )
 
-        # 5. Validar política de senha (RN009)
+        # 5. Validar política de senha (RN009 / IAM)
+        self.validar_senha(cadastro.senha)
         senha = cadastro.senha
-        if (
-            not (8 <= len(senha) <= 100) 
-            or not any(c.isupper() for c in senha) 
-            or not any(c.isdigit() for c in senha)
-        ):
-            raise HTTPException(
-                status_code=400,
-                detail="A senha deve conter entre 8 e 100 caracteres, incluindo pelo menos uma letra maiúscula e um número."
-            )
 
         # 6. Lógica específica por perfil
         if perfil == TipoPerfil.DISCENTE:
@@ -267,6 +264,21 @@ class UsuarioService:
             raise LoginMuitoLongoException()
         if any(char.isdigit() for char in login):
             raise LoginContemNumerosException()
+
+    def validar_senha(self, senha: str) -> None:
+        if not senha or len(senha) < 8:
+            raise SenhaCurtaException()
+        if not any(c.isupper() for c in senha):
+            raise SenhaSemLetraMaiusculaException()
+        if not any(c.islower() for c in senha):
+            raise SenhaSemLetraMinusculaException()
+        if not any(c.isdigit() for c in senha):
+            raise SenhaSemNumeroException()
+        
+        # Caracteres especiais do AWS IAM: !@#$%^&*()_+-=[]{}|'
+        especiais = "!@#$%^&*()_+-=[]{}|'"
+        if not any(c in especiais for c in senha):
+            raise SenhaSemCaractereEspecialException()
 
     def login_usuario(self, login: str, senha: str) -> Union[Discente, Docente, Monitor]:
         self.validar_login(login)

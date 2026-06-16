@@ -42,7 +42,7 @@ DISCENTE_PAYLOAD = {
     "nome": "João Silva",
     "login": "joaosilva",
     "email": "joao.silva@discente.ufpb.br",
-    "senha": "Password123",
+    "senha": "Password123!",
     "matricula": "2023001234",
     "curso": "Engenharia de Computação",
     "periodo": 3,
@@ -52,7 +52,7 @@ DOCENTE_PAYLOAD = {
     "nome": "Maria Souza",
     "login": "mariasouza",
     "email": "maria.souza@ufpb.br",
-    "senha": "DocentePass1",
+    "senha": "DocentePass1!",
     "siape": "1122334",
     "departamento": "Departamento de Informática",
     "isCoordenador": True,
@@ -76,7 +76,7 @@ def _seed_discentes(quantidade: int, prefixo: str = "Aluno"):
                 nome=f"{prefixo} {i + 1}",
                 login=f"aluno{_index_to_letters(i)}",
                 email=f"aluno{i + 1}@discente.ufpb.br",
-                senha="Hash123",
+                senha="Hash123!",
                 perfil=TipoPerfil.DISCENTE,
                 ativo=True,
                 matricula=f"20230{i + 1:05d}",
@@ -121,7 +121,7 @@ class TestCadastroUsuario:
         assert "senha" not in data
 
     def test_criar_docente_ci_com_sucesso(self):
-        payload = {"nome": "Carlos Roberto", "login": "carlosrob", "email": "carlos@ci.ufpb.br", "senha": "DocentePass2"}
+        payload = {"nome": "Carlos Roberto", "login": "carlosrob", "email": "carlos@ci.ufpb.br", "senha": "DocentePass2!"}
         response = client.post("/usuarios", json=payload)
 
         assert response.status_code == 201
@@ -139,25 +139,39 @@ class TestCadastroUsuario:
         assert response.json()["detail"] == "E-mail inválido ou já cadastrado. Utilize seu e-mail institucional."
 
     def test_erro_senha_curta(self):
-        payload = {**DISCENTE_PAYLOAD, "senha": "Pas1"}
+        payload = {**DISCENTE_PAYLOAD, "senha": "Pas1!"}
         response = client.post("/usuarios", json=payload)
 
         assert response.status_code == 400
-        assert "8 e 100 caracteres" in response.json()["detail"]
+        assert "8 caracteres" in response.json()["detail"]
 
     def test_erro_senha_sem_maiuscula(self):
-        payload = {**DISCENTE_PAYLOAD, "senha": "password123"}
+        payload = {**DISCENTE_PAYLOAD, "senha": "password123!"}
         response = client.post("/usuarios", json=payload)
 
         assert response.status_code == 400
         assert "letra maiúscula" in response.json()["detail"]
 
     def test_erro_senha_sem_numero(self):
-        payload = {**DISCENTE_PAYLOAD, "senha": "Password"}
+        payload = {**DISCENTE_PAYLOAD, "senha": "Password!"}
         response = client.post("/usuarios", json=payload)
 
         assert response.status_code == 400
         assert "número" in response.json()["detail"]
+
+    def test_erro_senha_sem_minuscula(self):
+        payload = {**DISCENTE_PAYLOAD, "senha": "PASSWORD123!"}
+        response = client.post("/usuarios", json=payload)
+
+        assert response.status_code == 400
+        assert "letra minúscula" in response.json()["detail"]
+
+    def test_erro_senha_sem_especial(self):
+        payload = {**DISCENTE_PAYLOAD, "senha": "Password123"}
+        response = client.post("/usuarios", json=payload)
+
+        assert response.status_code == 400
+        assert "caractere especial" in response.json()["detail"]
 
     def test_erro_discente_sem_matricula(self):
         payload = {k: v for k, v in DISCENTE_PAYLOAD.items() if k != "matricula"}
@@ -323,22 +337,22 @@ class TestFiltrarUsuarios:
         """Insere 3 discentes e 1 docente com nomes e matrículas conhecidos."""
         usuario_repository.add(Discente(
             id=uuid4(), nome="Ana Paula", login="anapaula", email="ana@discente.ufpb.br",
-            senha="Hash1", perfil=TipoPerfil.DISCENTE, ativo=True,
+            senha="Hash1!", perfil=TipoPerfil.DISCENTE, ativo=True,
             matricula="2023000001", curso="CC", periodo=1,
         ))
         usuario_repository.add(Discente(
             id=uuid4(), nome="Ana Beatriz", login="anabeatriz", email="anab@discente.ufpb.br",
-            senha="Hash2", perfil=TipoPerfil.DISCENTE, ativo=True,
+            senha="Hash2!", perfil=TipoPerfil.DISCENTE, ativo=True,
             matricula="2023000002", curso="SI", periodo=2,
         ))
         usuario_repository.add(Discente(
             id=uuid4(), nome="Carlos Eduardo", login="carlosedu", email="carlos@discente.ufpb.br",
-            senha="Hash3", perfil=TipoPerfil.DISCENTE, ativo=True,
+            senha="Hash3!", perfil=TipoPerfil.DISCENTE, ativo=True,
             matricula="2023000003", curso="EC", periodo=3,
         ))
         usuario_repository.add(Docente(
             id=uuid4(), nome="Ana Professora", login="anaprof", email="ana.prof@ufpb.br",
-            senha="Hash4", perfil=TipoPerfil.DOCENTE, ativo=True,
+            senha="Hash4!", perfil=TipoPerfil.DOCENTE, ativo=True,
         ))
 
     # --- Filtro por nome ---
@@ -431,7 +445,7 @@ class TestFiltrarUsuarios:
                 id=uuid4(), nome=f"Teste Usuario {i + 1}",
                 login=f"teste{_index_to_letters(i)}",
                 email=f"teste{i + 1}@discente.ufpb.br",
-                senha="Hash1", perfil=TipoPerfil.DISCENTE, ativo=True,
+                senha="Hash1!", perfil=TipoPerfil.DISCENTE, ativo=True,
                 matricula=f"2024{i + 1:06d}",
             ))
 
@@ -449,7 +463,7 @@ class TestFiltrarUsuarios:
                 id=uuid4(), nome=f"Teste Usuario {i + 1}",
                 login=f"teste{_index_to_letters(i)}",
                 email=f"teste{i + 1}@discente.ufpb.br",
-                senha="Hash1", perfil=TipoPerfil.DISCENTE, ativo=True,
+                senha="Hash1!", perfil=TipoPerfil.DISCENTE, ativo=True,
                 matricula=f"2024{i + 1:06d}",
             ))
 
@@ -659,7 +673,7 @@ class TestLoginUsuario:
         # Tenta realizar login
         payload = {
             "login": "joaosilva",
-            "senha": "Password123"
+            "senha": "Password123!"
         }
         response = client.post("/usuarios/login", json=payload)
         assert response.status_code == 200
@@ -675,7 +689,7 @@ class TestLoginUsuario:
 
         payload = {
             "login": login_12_chars,
-            "senha": "Password123"
+            "senha": "Password123!"
         }
         response = client.post("/usuarios/login", json=payload)
         assert response.status_code == 200
@@ -684,7 +698,7 @@ class TestLoginUsuario:
     def test_login_erro_login_vazio(self):
         payload = {
             "login": "",
-            "senha": "Password123"
+            "senha": "Password123!"
         }
         response = client.post("/usuarios/login", json=payload)
         assert response.status_code == 400
@@ -693,7 +707,7 @@ class TestLoginUsuario:
     def test_login_erro_login_espacos(self):
         payload = {
             "login": "    ",
-            "senha": "Password123"
+            "senha": "Password123!"
         }
         response = client.post("/usuarios/login", json=payload)
         assert response.status_code == 400
@@ -703,7 +717,7 @@ class TestLoginUsuario:
         # 13 caracteres alfabéticos
         payload = {
             "login": "abcdefghijklm",
-            "senha": "Password123"
+            "senha": "Password123!"
         }
         response = client.post("/usuarios/login", json=payload)
         assert response.status_code == 400
@@ -712,7 +726,7 @@ class TestLoginUsuario:
     def test_login_erro_login_contem_numeros(self):
         payload = {
             "login": "user123",
-            "senha": "Password123"
+            "senha": "Password123!"
         }
         response = client.post("/usuarios/login", json=payload)
         assert response.status_code == 400
@@ -721,7 +735,7 @@ class TestLoginUsuario:
     def test_login_erro_usuario_inexistente(self):
         payload = {
             "login": "inexistente",
-            "senha": "Password123"
+            "senha": "Password123!"
         }
         response = client.post("/usuarios/login", json=payload)
         assert response.status_code == 400
@@ -759,7 +773,7 @@ class TestPersistenciaUsuario:
             nome="Test Persistência",
             login="testpersist",
             email="test@discente.ufpb.br",
-            senha="Password123",
+            senha="Password123!",
             perfil=TipoPerfil.DISCENTE,
             ativo=True,
             matricula="2023000999",
@@ -781,7 +795,7 @@ class TestPersistenciaUsuario:
             nome="Test Persistência 2",
             login="testpersisttwo",
             email="test2@discente.ufpb.br",
-            senha="Password123",
+            senha="Password123!",
             perfil=TipoPerfil.DISCENTE,
             ativo=True,
             matricula="2023000998",
@@ -805,7 +819,7 @@ class TestPersistenciaUsuario:
             nome="Test Persistência 3",
             login="testpersistthree",
             email="test3@discente.ufpb.br",
-            senha="Password123",
+            senha="Password123!",
             perfil=TipoPerfil.DISCENTE,
             ativo=True,
             matricula="2023000997",

@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import inicializar_banco
 from app.routers import usuario_router
 from app.routers.disciplinas import router as disciplinas_router
+from app.routers.facade_router import router as facade_router
+from app.routers.inscricao_monitoria_router import router as inscricoes_monitoria_router
 from app.exceptions import LoginException, IOException, DatabaseException, SenhaException
 
 
@@ -66,6 +68,8 @@ async def database_exception_handler(request: Request, exc: DatabaseException):
 
 app.include_router(usuario_router)
 app.include_router(disciplinas_router)
+app.include_router(inscricoes_monitoria_router)
+app.include_router(facade_router)
 
 
 @app.get("/")

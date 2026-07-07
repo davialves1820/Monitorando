@@ -17,7 +17,7 @@ from app.routers import usuario_router
 from app.routers.disciplinas import router as disciplinas_router
 from app.routers.facade_router import router as facade_router
 from app.routers.inscricao_monitoria_router import router as inscricoes_monitoria_router
-from app.exceptions import LoginException, IOException, DatabaseException, SenhaException
+from app.exceptions import LoginException, DatabaseException, SenhaException
 
 
 @asynccontextmanager
@@ -93,13 +93,6 @@ async def login_exception_handler(request: Request, exc: LoginException):
 async def senha_exception_handler(request: Request, exc: SenhaException):
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
-        content={"detail": exc.message if hasattr(exc, "message") else str(exc)}
-    )
-
-@app.exception_handler(IOException)
-async def io_exception_handler(request: Request, exc: IOException):
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": exc.message if hasattr(exc, "message") else str(exc)}
     )
 

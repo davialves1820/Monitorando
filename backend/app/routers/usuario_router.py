@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Query, Path, Header, HTTPException
+from fastapi import APIRouter, Request, status, Query, Path, Header, HTTPException
 from uuid import UUID
 from typing import Optional
 from app.models.enums import TipoPerfil
@@ -11,7 +11,6 @@ from app.models.usuario import (
     MonitorResponse,
     LoginRequest
 )
-from app.services.usuario_service import usuario_service
 
 router = APIRouter(
     prefix="/usuarios",
@@ -19,8 +18,8 @@ router = APIRouter(
 )
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-def cadastrar(cadastro: UsuarioCadastro):
-    usuario = usuario_service.cadastrar_usuario(cadastro)
+def cadastrar(cadastro: UsuarioCadastro, request: Request):
+    usuario = request.app.state.usuario_service.cadastrar_usuario(cadastro)
     if usuario.perfil == TipoPerfil.DISCENTE:
         return DiscenteResponse(
             id=usuario.id,
@@ -65,20 +64,16 @@ def cadastrar(cadastro: UsuarioCadastro):
     },
 )
 def listar_usuarios(
+    request: Request,
     nome: Optional[str] = Query(default=None, description="Filtro por nome (parcial, case-insensitive)"),
     matricula: Optional[str] = Query(default=None, description="Filtro por matrícula (exata, somente discentes)"),
     pagina: int = Query(default=1, ge=1, description="Número da página (começa em 1)"),
     limite: int = Query(default=50, ge=1, le=200, description="Registros por página (padrão: 50)"),
 ) -> PaginatedUsuarios:
+    svc = request.app.state.usuario_service
     if nome or matricula:
-        return usuario_service.buscar_usuarios(
-            nome=nome,
-            matricula=matricula,
-            pagina=pagina,
-            limite=limite,
-        )
-    return usuario_service.listar_usuarios(pagina=pagina, limite=limite)
-
+        return svc.buscar_usuarios(nome=nome, matricula=matricula, pagina=pagina, limite=limite)
+    return svc.listar_usuarios(pagina=pagina, limite=limite)
 
 
 @router.get(
@@ -91,9 +86,10 @@ def listar_usuarios(
     },
 )
 def detalhar_usuario(
+    request: Request,
     id: UUID = Path(description="ID (UUID) do usuário a ser consultado"),
 ):
-    usuario = usuario_service.buscar_usuario_por_id(id)
+    usuario = request.app.state.usuario_service.buscar_usuario_por_id(id)
     if usuario.perfil == TipoPerfil.MONITOR:
         return MonitorResponse(
             id=usuario.id,
@@ -139,8 +135,9 @@ def detalhar_usuario(
 
 @router.patch("/{id}/promover", response_model=MonitorResponse, summary="Promover Aluno para Monitor")
 def promover_usuario(
+    request: Request,
     id: UUID = Path(description="ID (UUID) do aluno a ser promovido"),
-    request: PromoverRequest = None,
+    body: PromoverRequest = None,
     x_perfil: Optional[str] = Header(None, alias="X-Perfil")
 ):
     if x_perfil != "COORDENADOR":
@@ -148,12 +145,12 @@ def promover_usuario(
             status_code=403,
             detail="Acesso negado: apenas coordenadores podem realizar esta ação."
         )
-    if not request:
+    if not body:
         raise HTTPException(
             status_code=400,
             detail="Corpo da requisição é obrigatório."
         )
-    usuario_promovido = usuario_service.promover_usuario(id, request)
+    usuario_promovido = request.app.state.usuario_service.promover_usuario(id, body)
     return MonitorResponse(
         id=usuario_promovido.id,
         nome=usuario_promovido.nome,
@@ -172,6 +169,7 @@ def promover_usuario(
 
 @router.patch("/{id}/revogar", response_model=DiscenteResponse, summary="Revogar Monitor para Aluno")
 def revogar_monitor(
+    request: Request,
     id: UUID = Path(description="ID (UUID) do monitor a ser revogado"),
     x_perfil: Optional[str] = Header(None, alias="X-Perfil")
 ):
@@ -180,7 +178,7 @@ def revogar_monitor(
             status_code=403,
             detail="Acesso negado: apenas coordenadores podem realizar esta ação."
         )
-    usuario_revogado = usuario_service.revogar_monitor(id)
+    usuario_revogado = request.app.state.usuario_service.revogar_monitor(id)
     return DiscenteResponse(
         id=usuario_revogado.id,
         nome=usuario_revogado.nome,
@@ -195,8 +193,8 @@ def revogar_monitor(
     )
 
 @router.post("/login", status_code=status.HTTP_200_OK, summary="Realizar login do usuário")
-def login(login_data: LoginRequest):
-    usuario = usuario_service.login_usuario(login_data.login, login_data.senha)
+def login(login_data: LoginRequest, request: Request):
+    usuario = request.app.state.usuario_service.login_usuario(login_data.login, login_data.senha)
     if usuario.perfil == TipoPerfil.MONITOR:
         return MonitorResponse(
             id=usuario.id,

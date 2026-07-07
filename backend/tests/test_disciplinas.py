@@ -1,37 +1,25 @@
 """
 Testes de integração para o módulo de Disciplinas.
 
-Isolamento: a fixture `limpar_banco` (autouse) limpa as tabelas `disciplinas`
-e `usuarios` entre cada teste, garantindo independência de execução.
+Isolamento: a fixture `reset_repositorios` (autouse, definida em conftest.py)
+limpa o store InMemory antes e após cada teste — sem I/O de disco.
 """
 
 import pytest
 from fastapi.testclient import TestClient
-from app.main import app
-from app.repositories.disciplina_repository import disciplina_repository
-from app.repositories.usuario_repository import usuario_repository
-
-client = TestClient(app)
 
 
 # ---------------------------------------------------------------------------
-# Fixture: isola cada teste limpando o banco de dados de teste
+# O client e o reset são fornecidos pelo conftest.py via fixture.
+# Aqui apenas declaramos que precisamos do `client`.
 # ---------------------------------------------------------------------------
-@pytest.fixture(autouse=True)
-def limpar_banco():
-    """Limpa todas as tabelas antes e após cada teste para garantir isolamento."""
-    disciplina_repository.clear()
-    usuario_repository.clear()
-    yield
-    disciplina_repository.clear()
-    usuario_repository.clear()
 
 
 # ===========================================================================
 # CADASTRO DE DISCIPLINAS (POST /disciplinas/)
 # ===========================================================================
 
-def test_criar_disciplina_com_sucesso():
+def test_criar_disciplina_com_sucesso(client: TestClient):
     payload = {
         "codigo": "COMP001",
         "nome": "Introdução à Programação",
@@ -48,7 +36,7 @@ def test_criar_disciplina_com_sucesso():
     assert "id" in data
 
 
-def test_criar_disciplina_codigo_normalizado_maiusculo():
+def test_criar_disciplina_codigo_normalizado_maiusculo(client: TestClient):
     """O código deve ser normalizado para letras maiúsculas pelo service."""
     payload = {
         "codigo": "comp010",
@@ -62,7 +50,7 @@ def test_criar_disciplina_codigo_normalizado_maiusculo():
     assert response.json()["codigo"] == "COMP010"
 
 
-def test_criar_disciplina_codigo_duplicado():
+def test_criar_disciplina_codigo_duplicado(client: TestClient):
     payload = {
         "codigo": "COMP002",
         "nome": "Estrutura de Dados",
@@ -79,7 +67,7 @@ def test_criar_disciplina_codigo_duplicado():
     assert "Já existe uma disciplina com este código" in response.json()["detail"]
 
 
-def test_criar_disciplina_dados_invalidos():
+def test_criar_disciplina_dados_invalidos(client: TestClient):
     payload = {
         "codigo": "",
         "nome": "Materia Vazia",
@@ -91,7 +79,7 @@ def test_criar_disciplina_dados_invalidos():
     assert "Preencha todos os campos obrigatórios" in response.json()["detail"]
 
 
-def test_criar_disciplina_nome_vazio():
+def test_criar_disciplina_nome_vazio(client: TestClient):
     payload = {
         "codigo": "COMP003",
         "nome": "",
@@ -107,7 +95,7 @@ def test_criar_disciplina_nome_vazio():
 # LISTAGEM DE DISCIPLINAS (GET /disciplinas/)
 # ===========================================================================
 
-def test_listar_disciplinas_vazio():
+def test_listar_disciplinas_vazio(client: TestClient):
     """Sem disciplinas cadastradas, deve retornar lista vazia."""
     response = client.get("/disciplinas/")
     assert response.status_code == 200
@@ -116,7 +104,7 @@ def test_listar_disciplinas_vazio():
     assert len(data) == 0
 
 
-def test_listar_disciplinas_com_registros():
+def test_listar_disciplinas_com_registros(client: TestClient):
     """Disciplinas cadastradas devem aparecer na listagem."""
     payloads = [
         {"codigo": "COMP004", "nome": "Cálculo I", "ementa": "Limites e derivadas.", "periodo": 1},
@@ -135,7 +123,7 @@ def test_listar_disciplinas_com_registros():
     assert "COMP005" in codigos
 
 
-def test_listar_disciplinas_estrutura_de_resposta():
+def test_listar_disciplinas_estrutura_de_resposta(client: TestClient):
     """Cada item da listagem deve conter os campos esperados."""
     payload = {
         "codigo": "COMP006",

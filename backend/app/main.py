@@ -1,9 +1,12 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import inicializar_banco
+from app.repositories.factory import make_disciplina_repository, make_usuario_repository
+from app.services.disciplina_service import DisciplinaService
+from app.services.usuario_service import UsuarioService
 from app.routers import usuario_router
 from app.routers.disciplinas import router as disciplinas_router
 from app.exceptions import LoginException, IOException, DatabaseException, SenhaException
@@ -11,9 +14,29 @@ from app.exceptions import LoginException, IOException, DatabaseException, Senha
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Garante que as tabelas existam antes de qualquer requisição
-    inicializar_banco()
-    print("INFO:  [DB] Banco de dados SQLite inicializado.")
+    """
+    Boot da aplicação: escolhe o backend de persistência via REPO_BACKEND,
+    instancia os repositórios e os injeta nos services.
+
+    REPO_BACKEND=sqlite  → persistência em SQLite (padrão de produção)
+    REPO_BACKEND=ram     → armazenamento em RAM   (ephemeral / testes)
+    """
+    backend = os.environ.get("REPO_BACKEND", "sqlite").lower()
+
+    # --- repositórios ---
+    disciplina_repo = make_disciplina_repository()
+    usuario_repo    = make_usuario_repository()
+
+    # --- services (dependem da interface, não da implementação) ---
+    app.state.disciplina_service = DisciplinaService(repo=disciplina_repo)
+    app.state.usuario_service    = UsuarioService(repo=usuario_repo)
+
+    # Inicializa o schema do banco apenas quando o backend for SQLite
+    if backend == "sqlite":
+        from app.database import inicializar_banco
+        inicializar_banco()
+
+    print(f"INFO:  [BOOT] REPO_BACKEND={backend.upper()} — repositórios inicializados.")
     yield
 
 

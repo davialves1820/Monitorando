@@ -1,0 +1,387 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="4jWMgy2ygtaHkXt0XQ-_" name="Página-1">
+    <mxGraphModel dx="911" dy="531" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="facade_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=13;fontColor=#000000;" value="&lt;b&gt;FacadeSingletonController&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="340" x="720" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="facade_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- _instance : FacadeSingletonController = None&#xa;- _usuario_repo : UsuarioRepository&#xa;- _disciplina_repo : DisciplinaRepository" vertex="1">
+          <mxGeometry height="60" width="340" x="720" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="facade_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- __init__() : void&#xa;+ getInstance() : FacadeSingletonController&#xa;+ getTotalEntidades() : dict&#xa;+ cadastrarUsuario(cadastro : UsuarioCadastro) : Usuario&#xa;+ listarUsuarios(pagina : int, limite : int) : PaginatedUsuarios&#xa;+ buscarUsuario(id : UUID) : Usuario&#xa;+ promoverUsuario(id : UUID, req : PromoverRequest) : Monitor&#xa;+ revogarMonitor(id : UUID) : Discente&#xa;+ cadastrarDisciplina(cadastro : DisciplinaCadastro) : Disciplina&#xa;+ listarDisciplinas() : List[Disciplina]" vertex="1">
+          <mxGeometry height="180" width="340" x="720" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="D_qwa1qKUp3HTz106249-2" edge="1" parent="1" source="nota_singleton" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="facade_ops" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1130" y="170" />
+              <mxPoint x="1130" y="170" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nota_singleton" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffc0;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;fontColor=#000000;shape=mxgraph.general.annotation;" value="«Singleton»&#xa;instância única controlada&#xa;por getInstance()&#xa;&#xa;«Facade»&#xa;ponto de entrada único&#xa;para todos os gerentes" vertex="1">
+          <mxGeometry height="120" width="200" x="1150" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="nota_singleton_edge" edge="1" parent="1" source="nota_singleton" style="edgeStyle=none;html=1;dashed=1;strokeColor=#000000;endArrow=none;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" target="facade_title">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nota_total" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffc0;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;fontColor=#000000;shape=mxgraph.general.annotation;" value="getTotalEntidades() retorna:&#xa;{&#xa;  &#39;usuarios&#39;: int,&#xa;  &#39;disciplinas&#39;: int,&#xa;  &#39;monitores&#39;: int,&#xa;  &#39;docentes&#39;: int,&#xa;  &#39;discentes&#39;: int&#xa;}" vertex="1">
+          <mxGeometry height="130" width="200" x="1150" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="nota_total_edge" edge="1" parent="1" source="nota_total" style="edgeStyle=none;html=1;dashed=1;strokeColor=#000000;endArrow=none;" target="facade_ops">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ger_usuario_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;GerenciadorUsuario&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="280" x="200" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="ger_usuario_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- _repo : UsuarioRepository" vertex="1">
+          <mxGeometry height="25" width="280" x="200" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="ger_usuario_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="+ cadastrar(cadastro : UsuarioCadastro) : Usuario&#xa;+ listar(pagina : int, limite : int) : PaginatedUsuarios&#xa;+ buscar(id : UUID) : Usuario&#xa;+ promover(id : UUID, req : PromoverRequest) : Monitor&#xa;+ revogar(id : UUID) : Discente&#xa;+ contarTotal() : int" vertex="1">
+          <mxGeometry height="110" width="280" x="200" y="475" as="geometry" />
+        </mxCell>
+        <mxCell id="ger_disc_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;GerenciadorDisciplina&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="280" x="1220" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="ger_disc_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- _repo : DisciplinaRepository" vertex="1">
+          <mxGeometry height="25" width="280" x="1220" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="ger_disc_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="+ cadastrar(cadastro : DisciplinaCadastro) : Disciplina&#xa;+ listar() : List[Disciplina]&#xa;+ contarTotal() : int" vertex="1">
+          <mxGeometry height="60" width="280" x="1220" y="475" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_facade_ger_usuario" edge="1" parent="1" source="facade_title" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="ger_usuario_title">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="130" />
+              <mxPoint x="340" y="130" />
+              <mxPoint x="340" y="420" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lbl_facade_ger_usuario" connectable="0" parent="rel_facade_ger_usuario" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;" value="&lt;&lt;usa&gt;&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_facade_ger_disc" edge="1" parent="1" source="facade_title" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;exitX=1;exitY=0.5;exitDx=0;exitDy=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1060" y="50" />
+              <mxPoint x="1410" y="50" />
+              <mxPoint x="1410" y="420" />
+            </Array>
+            <mxPoint x="1410" y="420" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lbl_facade_ger_disc" connectable="0" parent="rel_facade_ger_disc" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;" value="&lt;&lt;usa&gt;&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.1" as="geometry" />
+        </mxCell>
+        <mxCell id="usuario_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;&lt;i&gt;«abstract» Usuario&lt;/i&gt;&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="340" x="780" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="usuario_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- id : UUID&#xa;- nome : String&#xa;- email : EmailStr  {sufixo determina perfil}&#xa;- senha : String  {8-100c, maiúsc., número}&#xa;- perfil : TipoPerfil&#xa;- ativo : Boolean = True" vertex="1">
+          <mxGeometry height="110" width="340" x="780" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="usuario_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="+ cadastrar_usuario(cadastro : UsuarioCadastro) : Usuario&#xa;+ listar_usuarios(pagina : int, limite : int) : List&#xa;+ buscar_usuario(id : UUID) : Usuario" vertex="1">
+          <mxGeometry height="60" width="340" x="780" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_ger_usuario" edge="1" parent="1" source="ger_usuario_title" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;" target="usuario_title">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_ger_usuario" connectable="0" parent="rel_ger_usuario" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;" value="&lt;&lt;gerencia&gt;&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.1" as="geometry" />
+        </mxCell>
+        <mxCell id="discente_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;Discente&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="300" x="460" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="discente_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- matricula : String  {obrigatória}&#xa;- curso : String = &quot;&quot;&#xa;- periodo : Integer | None&#xa;- disciplinasInteresse : List[String]" vertex="1">
+          <mxGeometry height="80" width="300" x="460" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="discente_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="+ cadastrar_usuario(cadastro : UsuarioCadastro) : Discente" vertex="1">
+          <mxGeometry height="25" width="300" x="460" y="870" as="geometry" />
+        </mxCell>
+        <mxCell id="monitor_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;Monitor&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="300" x="460" y="980" as="geometry" />
+        </mxCell>
+        <mxCell id="monitor_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- perfil : TipoPerfil = MONITOR&#xa;- cargaHoraria : Integer  {&gt;= 0}&#xa;- disponivel : Boolean = True&#xa;- disciplinaVinculada : String  {não vazia}" vertex="1">
+          <mxGeometry height="80" width="300" x="460" y="1010" as="geometry" />
+        </mxCell>
+        <mxCell id="monitor_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="+ promover_usuario(id : UUID, req : PromoverRequest) : Monitor&#xa;+ revogar_monitor(id : UUID) : Discente" vertex="1">
+          <mxGeometry height="40" width="300" x="460" y="1090" as="geometry" />
+        </mxCell>
+        <mxCell id="docente_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;Docente&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="300" x="1140" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="docente_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- siape : String = &quot;&quot;&#xa;- departamento : String = &quot;&quot;&#xa;- isCoordenador : Boolean&#xa;- disciplinas : List[String]" vertex="1">
+          <mxGeometry height="80" width="300" x="1140" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="docente_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="+ cadastrar_usuario(cadastro : UsuarioCadastro) : Docente" vertex="1">
+          <mxGeometry height="25" width="300" x="1140" y="870" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_usuario_discente" edge="1" parent="1" source="usuario_ops" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=0;strokeColor=#000000;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.469;exitY=1.008;exitDx=0;exitDy=0;exitPerimeter=0;" target="discente_title">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="940" y="630" />
+              <mxPoint x="940" y="630" />
+              <mxPoint x="940" y="720" />
+              <mxPoint x="610" y="720" />
+            </Array>
+            <mxPoint x="950" y="630" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_usuario_docente" edge="1" parent="1" source="usuario_ops" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=0;strokeColor=#000000;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.536;exitY=1.008;exitDx=0;exitDy=0;exitPerimeter=0;" target="docente_title">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="962" y="720" />
+              <mxPoint x="1290" y="720" />
+            </Array>
+            <mxPoint x="950" y="620" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_discente_monitor" edge="1" parent="1" source="discente_ops" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=0;strokeColor=#000000;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="monitor_title">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="disciplina_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;Disciplina&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="300" x="1140" y="980" as="geometry" />
+        </mxCell>
+        <mxCell id="disciplina_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- id : UUID&#xa;- codigo : String  {único, UPPER}&#xa;- nome : String&#xa;- ementa : String&#xa;- periodo : Integer" vertex="1">
+          <mxGeometry height="100" width="300" x="1140" y="1010" as="geometry" />
+        </mxCell>
+        <mxCell id="disciplina_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="+ cadastrar_disciplina(cadastro : DisciplinaCadastro) : Disciplina&#xa;+ listar_disciplinas() : List[Disciplina]" vertex="1">
+          <mxGeometry height="40" width="300" x="1140" y="1110" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_ger_disc" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;" target="disciplina_title">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1360" y="715" />
+              <mxPoint x="1460" y="715" />
+              <mxPoint x="1460" y="990" />
+            </Array>
+            <mxPoint x="1360" y="540" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lbl_ger_disc" connectable="0" parent="rel_ger_disc" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;" value="&lt;&lt;gerencia&gt;&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.1" as="geometry" />
+        </mxCell>
+        <mxCell id="sessao_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;SessaoMonitoria&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="280" x="100" y="1300" as="geometry" />
+        </mxCell>
+        <mxCell id="sessao_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- id : UUID&#xa;- dataHora : DateTime&#xa;- local : String&#xa;- status : StatusSessao&#xa;- codigoPresenca : String&#xa;- vagas : Integer" vertex="1">
+          <mxGeometry height="110" width="280" x="100" y="1330" as="geometry" />
+        </mxCell>
+        <mxCell id="sessao_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;fontStyle=2;" value="sem operações implementadas" vertex="1">
+          <mxGeometry height="25" width="280" x="100" y="1440" as="geometry" />
+        </mxCell>
+        <mxCell id="horario_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;Horario&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="260" x="420" y="1300" as="geometry" />
+        </mxCell>
+        <mxCell id="horario_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- id : UUID&#xa;- diaSemana : DiaSemana&#xa;- horaInicio : Time&#xa;- horaFim : Time&#xa;- recorrente : Boolean" vertex="1">
+          <mxGeometry height="100" width="260" x="420" y="1330" as="geometry" />
+        </mxCell>
+        <mxCell id="horario_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;fontStyle=2;" value="sem operações implementadas" vertex="1">
+          <mxGeometry height="25" width="260" x="420" y="1430" as="geometry" />
+        </mxCell>
+        <mxCell id="inscricao_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;Inscricao&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="260" x="720" y="1300" as="geometry" />
+        </mxCell>
+        <mxCell id="inscricao_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- id : UUID&#xa;- dataHora : DateTime&#xa;- status : StatusInscricao&#xa;- confirmada : Boolean&#xa;- discente : Discente" vertex="1">
+          <mxGeometry height="100" width="260" x="720" y="1330" as="geometry" />
+        </mxCell>
+        <mxCell id="inscricao_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;fontStyle=2;" value="sem operações implementadas" vertex="1">
+          <mxGeometry height="25" width="260" x="720" y="1430" as="geometry" />
+        </mxCell>
+        <mxCell id="registro_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;RegistroPresenca&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="260" x="1020" y="1300" as="geometry" />
+        </mxCell>
+        <mxCell id="registro_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- id : UUID&#xa;- dataHora : DateTime&#xa;- codigoUsado : String&#xa;- confirmado : Boolean" vertex="1">
+          <mxGeometry height="80" width="260" x="1020" y="1330" as="geometry" />
+        </mxCell>
+        <mxCell id="registro_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;fontStyle=2;" value="sem operações implementadas" vertex="1">
+          <mxGeometry height="25" width="260" x="1020" y="1410" as="geometry" />
+        </mxCell>
+        <mxCell id="material_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;MaterialDidatico&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="260" x="1320" y="1300" as="geometry" />
+        </mxCell>
+        <mxCell id="material_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- id : UUID&#xa;- titulo : String&#xa;- tipo : TipoMaterial&#xa;- url : String&#xa;- dataUpload : DateTime" vertex="1">
+          <mxGeometry height="100" width="260" x="1320" y="1330" as="geometry" />
+        </mxCell>
+        <mxCell id="material_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;fontStyle=2;" value="sem operações implementadas" vertex="1">
+          <mxGeometry height="25" width="260" x="1320" y="1430" as="geometry" />
+        </mxCell>
+        <mxCell id="chat_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;Chat&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="260" x="100" y="1560" as="geometry" />
+        </mxCell>
+        <mxCell id="chat_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- id : UUID&#xa;- disciplina : Disciplina&#xa;- criadoEm : DateTime&#xa;- participantes : List[Usuario]" vertex="1">
+          <mxGeometry height="80" width="260" x="100" y="1590" as="geometry" />
+        </mxCell>
+        <mxCell id="chat_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;fontStyle=2;" value="sem operações implementadas" vertex="1">
+          <mxGeometry height="25" width="260" x="100" y="1670" as="geometry" />
+        </mxCell>
+        <mxCell id="mensagem_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;Mensagem&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="260" x="420" y="1560" as="geometry" />
+        </mxCell>
+        <mxCell id="mensagem_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- id : UUID&#xa;- conteudo : String&#xa;- dataHora : DateTime&#xa;- remetente : Usuario" vertex="1">
+          <mxGeometry height="80" width="260" x="420" y="1590" as="geometry" />
+        </mxCell>
+        <mxCell id="mensagem_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;fontStyle=2;" value="sem operações implementadas" vertex="1">
+          <mxGeometry height="25" width="260" x="420" y="1670" as="geometry" />
+        </mxCell>
+        <mxCell id="notif_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;Notificacao&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="260" x="720" y="1560" as="geometry" />
+        </mxCell>
+        <mxCell id="notif_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- id : UUID&#xa;- titulo : String&#xa;- mensagem : String&#xa;- lida : Boolean" vertex="1">
+          <mxGeometry height="80" width="260" x="720" y="1590" as="geometry" />
+        </mxCell>
+        <mxCell id="notif_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;fontStyle=2;" value="sem operações implementadas" vertex="1">
+          <mxGeometry height="25" width="260" x="720" y="1670" as="geometry" />
+        </mxCell>
+        <mxCell id="demo_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;DemonstracaoInteresse&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="260" x="1020" y="1560" as="geometry" />
+        </mxCell>
+        <mxCell id="demo_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- id : UUID&#xa;- discente : Discente&#xa;- sessao : SessaoMonitoria&#xa;- dataHora : DateTime" vertex="1">
+          <mxGeometry height="80" width="260" x="1020" y="1590" as="geometry" />
+        </mxCell>
+        <mxCell id="demo_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;fontStyle=2;" value="sem operações implementadas" vertex="1">
+          <mxGeometry height="25" width="260" x="1020" y="1670" as="geometry" />
+        </mxCell>
+        <mxCell id="fav_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;DisciplinaFavorita&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="260" x="1320" y="1560" as="geometry" />
+        </mxCell>
+        <mxCell id="fav_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- id : UUID&#xa;- discente : Discente&#xa;- disciplina : Disciplina" vertex="1">
+          <mxGeometry height="60" width="260" x="1320" y="1590" as="geometry" />
+        </mxCell>
+        <mxCell id="fav_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;fontStyle=2;" value="sem operações implementadas" vertex="1">
+          <mxGeometry height="25" width="260" x="1320" y="1650" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;Relatorio&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="260" x="720" y="1780" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- id : UUID&#xa;- titulo : String&#xa;- tipo : TipoRelatorio&#xa;- dataGeracao : DateTime&#xa;- conteudo : JSON" vertex="1">
+          <mxGeometry height="100" width="260" x="720" y="1810" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;fontStyle=2;" value="sem operações implementadas" vertex="1">
+          <mxGeometry height="25" width="260" x="720" y="1910" as="geometry" />
+        </mxCell>
+        <mxCell id="enum_tp_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=11;fontColor=#000000;" value="&lt;i&gt;«enum» TipoPerfil&lt;/i&gt;" vertex="1">
+          <mxGeometry height="30" width="180" x="100" y="1780" as="geometry" />
+        </mxCell>
+        <mxCell id="enum_tp_vals" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="DISCENTE&#xa;MONITOR&#xa;DOCENTE&#xa;COORDENADOR" vertex="1">
+          <mxGeometry height="80" width="180" x="100" y="1810" as="geometry" />
+        </mxCell>
+        <mxCell id="enum_ss_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=11;fontColor=#000000;" value="&lt;i&gt;«enum» StatusSessao&lt;/i&gt;" vertex="1">
+          <mxGeometry height="30" width="200" x="320" y="1780" as="geometry" />
+        </mxCell>
+        <mxCell id="enum_ss_vals" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="AGENDADA&#xa;EM_ANDAMENTO&#xa;CONCLUIDA&#xa;CANCELADA" vertex="1">
+          <mxGeometry height="80" width="200" x="320" y="1810" as="geometry" />
+        </mxCell>
+        <mxCell id="enum_tm_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=11;fontColor=#000000;" value="&lt;i&gt;«enum» TipoMaterial&lt;/i&gt;" vertex="1">
+          <mxGeometry height="30" width="200" x="1060" y="1780" as="geometry" />
+        </mxCell>
+        <mxCell id="enum_tm_vals" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="SLIDE&#xa;LISTA_EXERCICIO&#xa;VIDEOAULA" vertex="1">
+          <mxGeometry height="60" width="200" x="1060" y="1810" as="geometry" />
+        </mxCell>
+        <mxCell id="a_sessao_horario" edge="1" parent="1" source="sessao_title" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;" target="horario_title">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a_sessao_inscricao" edge="1" parent="1" source="sessao_title" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;" target="inscricao_title">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="300" y="1200" />
+              <mxPoint x="850" y="1200" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a_sessao_registro" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;" target="registro_title">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="640" y="1270" />
+              <mxPoint x="1150" y="1270" />
+            </Array>
+            <mxPoint x="640" y="1300" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a_sessao_material" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;entryX=0.059;entryY=-0.027;entryDx=0;entryDy=0;entryPerimeter=0;" target="material_title">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="560" y="1295" />
+              <mxPoint x="560" y="1230" />
+              <mxPoint x="1335" y="1230" />
+            </Array>
+            <mxPoint x="560" y="1290" as="sourcePoint" />
+            <mxPoint x="1300" y="1294.94" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a_chat_mensagem" edge="1" parent="1" source="chat_title" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;" target="mensagem_title">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a_monitor_sessao" edge="1" parent="1" source="monitor_title" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;" target="sessao_title">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="270" y="995" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a_disciplina_sessao" edge="1" parent="1" source="disciplina_title" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;" target="sessao_title">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1290" y="920" />
+              <mxPoint x="240" y="920" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a_disciplina_chat" edge="1" parent="1" source="disciplina_title" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;" target="chat_title">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1260" y="950" />
+              <mxPoint x="70" y="950" />
+              <mxPoint x="70" y="1575" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a_disciplina_material" edge="1" parent="1" source="disciplina_title" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;" target="material_title">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1470" y="1000" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a_discente_demo" edge="1" parent="1" source="discente_title" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;" target="demo_title">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1000" y="775" />
+              <mxPoint x="1000" y="1575" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a_discente_fav" edge="1" parent="1" source="discente_title" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;" target="fav_title">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="620" y="740" />
+              <mxPoint x="1600" y="740" />
+              <mxPoint x="1600" y="1575" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a_usuario_notif" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="950" y="1090" />
+              <mxPoint x="990" y="1090" />
+              <mxPoint x="990" y="1575" />
+            </Array>
+            <mxPoint x="950" y="620" as="sourcePoint" />
+            <mxPoint x="980" y="1574.9565217391305" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="singleton_loop" edge="1" parent="1" source="facade_title" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;endFill=0;strokeColor=#000000;exitX=0;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=1;entryDx=0;entryDy=0;curved=1;" target="facade_ops" value="getInstance()">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="630" y="40" />
+              <mxPoint x="630" y="310" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -86,6 +86,16 @@ def inicializar_banco() -> None:
                     ementa  TEXT NOT NULL,
                     periodo INTEGER NOT NULL
                 );
+
+                CREATE TABLE IF NOT EXISTS inscricoes_monitoria (
+                    id              TEXT PRIMARY KEY,
+                    usuario_id      TEXT NOT NULL,
+                    disciplina_id   TEXT NOT NULL,
+                    motivacao       TEXT NOT NULL,
+                    status          TEXT NOT NULL DEFAULT 'PENDENTE',
+                    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+                    FOREIGN KEY (disciplina_id) REFERENCES disciplinas(id) ON DELETE CASCADE
+                );
             """)
     except sqlite3.DatabaseError as e:
         raise DatabaseException(f"Erro ao inicializar o banco de dados: {e}")

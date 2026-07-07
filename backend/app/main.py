@@ -4,11 +4,19 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.repositories.factory import make_disciplina_repository, make_usuario_repository
+from app.repositories.factory import (
+    make_disciplina_repository,
+    make_usuario_repository,
+    make_inscricao_monitoria_repository,
+)
 from app.services.disciplina_service import DisciplinaService
 from app.services.usuario_service import UsuarioService
+from app.services.inscricao_monitoria_service import InscricaoMonitoriaService
+from app.controllers.facade_singleton_controller import facade_singleton_controller
 from app.routers import usuario_router
 from app.routers.disciplinas import router as disciplinas_router
+from app.routers.facade_router import router as facade_router
+from app.routers.inscricao_monitoria_router import router as inscricoes_monitoria_router
 from app.exceptions import LoginException, IOException, DatabaseException, SenhaException
 
 
@@ -24,12 +32,29 @@ async def lifespan(app: FastAPI):
     backend = os.environ.get("REPO_BACKEND", "sqlite").lower()
 
     # --- repositórios ---
-    disciplina_repo = make_disciplina_repository()
-    usuario_repo    = make_usuario_repository()
+    disciplina_repo  = make_disciplina_repository()
+    usuario_repo     = make_usuario_repository()
+    inscricao_repo   = make_inscricao_monitoria_repository()
 
     # --- services (dependem da interface, não da implementação) ---
-    app.state.disciplina_service = DisciplinaService(repo=disciplina_repo)
-    app.state.usuario_service    = UsuarioService(repo=usuario_repo)
+    disciplina_svc          = DisciplinaService(repo=disciplina_repo)
+    usuario_svc             = UsuarioService(repo=usuario_repo)
+    inscricao_monitoria_svc = InscricaoMonitoriaService(
+        inscricao_repo=inscricao_repo,
+        usuario_repo=usuario_repo,
+        disciplina_repo=disciplina_repo,
+    )
+
+    app.state.disciplina_service          = disciplina_svc
+    app.state.usuario_service             = usuario_svc
+    app.state.inscricao_monitoria_service = inscricao_monitoria_svc
+
+    # --- facade singleton (recebe os services via initialize) ---
+    facade_singleton_controller.initialize(
+        usuario_service=usuario_svc,
+        disciplina_service=disciplina_svc,
+        inscricao_monitoria_service=inscricao_monitoria_svc,
+    )
 
     # Inicializa o schema do banco apenas quando o backend for SQLite
     if backend == "sqlite":
@@ -89,6 +114,8 @@ async def database_exception_handler(request: Request, exc: DatabaseException):
 
 app.include_router(usuario_router)
 app.include_router(disciplinas_router)
+app.include_router(inscricoes_monitoria_router)
+app.include_router(facade_router)
 
 
 @app.get("/")

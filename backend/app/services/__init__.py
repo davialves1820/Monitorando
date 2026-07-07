@@ -1,1 +1,2 @@
 from app.services.usuario_service import UsuarioService
+from app.services.inscricao_monitoria_service import InscricaoMonitoriaService

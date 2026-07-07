@@ -8,3 +8,9 @@ from app.models.usuario import (
     DocenteResponse
 )
 from app.models.enums import TipoPerfil
+from app.models.inscricao_monitoria import (
+    InscricaoMonitoria,
+    InscricaoMonitoriaCadastro,
+    InscricaoMonitoriaAtualizacao,
+    InscricaoMonitoriaResponse,
+)

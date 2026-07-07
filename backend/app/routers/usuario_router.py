@@ -11,6 +11,16 @@ from app.models.usuario import (
     MonitorResponse,
     LoginRequest
 )
+from app.exceptions import (
+    CamposObrigatoriosException,
+    EmailInvalidoException,
+    EmailJaCadastradoException,
+    UsuarioNaoEncontradoException,
+    UsuarioJaEMonitorException,
+    PromocaoApenasParaDiscentesException,
+    DisciplinaVinculadaObrigatoriaException,
+    UsuarioNaoEMonitorException
+)
 
 router = APIRouter(
     prefix="/usuarios",
@@ -19,7 +29,11 @@ router = APIRouter(
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def cadastrar(cadastro: UsuarioCadastro, request: Request):
-    usuario = request.app.state.usuario_service.cadastrar_usuario(cadastro)
+    try:
+        usuario = request.app.state.usuario_service.cadastrar_usuario(cadastro)
+    except (CamposObrigatoriosException, EmailInvalidoException, EmailJaCadastradoException) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
+        
     if usuario.perfil == TipoPerfil.DISCENTE:
         return DiscenteResponse(
             id=usuario.id,
@@ -71,9 +85,12 @@ def listar_usuarios(
     limite: int = Query(default=50, ge=1, le=200, description="Registros por página (padrão: 50)"),
 ) -> PaginatedUsuarios:
     svc = request.app.state.usuario_service
-    if nome or matricula:
-        return svc.buscar_usuarios(nome=nome, matricula=matricula, pagina=pagina, limite=limite)
-    return svc.listar_usuarios(pagina=pagina, limite=limite)
+    try:
+        if nome or matricula:
+            return svc.buscar_usuarios(nome=nome, matricula=matricula, pagina=pagina, limite=limite)
+        return svc.listar_usuarios(pagina=pagina, limite=limite)
+    except UsuarioNaoEncontradoException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
 
 
 @router.get(
@@ -89,7 +106,10 @@ def detalhar_usuario(
     request: Request,
     id: UUID = Path(description="ID (UUID) do usuário a ser consultado"),
 ):
-    usuario = request.app.state.usuario_service.buscar_usuario_por_id(id)
+    try:
+        usuario = request.app.state.usuario_service.buscar_usuario_por_id(id)
+    except UsuarioNaoEncontradoException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
     if usuario.perfil == TipoPerfil.MONITOR:
         return MonitorResponse(
             id=usuario.id,
@@ -150,7 +170,13 @@ def promover_usuario(
             status_code=400,
             detail="Corpo da requisição é obrigatório."
         )
-    usuario_promovido = request.app.state.usuario_service.promover_usuario(id, body)
+    try:
+        usuario_promovido = request.app.state.usuario_service.promover_usuario(id, body)
+    except UsuarioNaoEncontradoException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
+    except (UsuarioJaEMonitorException, PromocaoApenasParaDiscentesException, DisciplinaVinculadaObrigatoriaException) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
+        
     return MonitorResponse(
         id=usuario_promovido.id,
         nome=usuario_promovido.nome,
@@ -178,7 +204,13 @@ def revogar_monitor(
             status_code=403,
             detail="Acesso negado: apenas coordenadores podem realizar esta ação."
         )
-    usuario_revogado = request.app.state.usuario_service.revogar_monitor(id)
+    try:
+        usuario_revogado = request.app.state.usuario_service.revogar_monitor(id)
+    except UsuarioNaoEncontradoException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
+    except UsuarioNaoEMonitorException as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
+        
     return DiscenteResponse(
         id=usuario_revogado.id,
         nome=usuario_revogado.nome,

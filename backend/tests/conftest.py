@@ -36,6 +36,8 @@ def reset_repositorios(client):
     """
     app.state.disciplina_service._repo.clear()
     app.state.usuario_service._repo.clear()
+    app.state.inscricao_monitoria_service._inscricao_repo.clear()
     yield
     app.state.disciplina_service._repo.clear()
     app.state.usuario_service._repo.clear()
+    app.state.inscricao_monitoria_service._inscricao_repo.clear()

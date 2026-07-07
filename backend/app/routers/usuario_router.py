@@ -9,7 +9,8 @@ from app.models.usuario import (
     PaginatedUsuarios,
     PromoverRequest,
     MonitorResponse,
-    LoginRequest
+    LoginRequest,
+    UsuarioResponse
 )
 from app.exceptions import (
     CamposObrigatoriosException,
@@ -34,32 +35,7 @@ def cadastrar(cadastro: UsuarioCadastro, request: Request):
     except (CamposObrigatoriosException, EmailInvalidoException, EmailJaCadastradoException) as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
         
-    if usuario.perfil == TipoPerfil.DISCENTE:
-        return DiscenteResponse(
-            id=usuario.id,
-            nome=usuario.nome,
-            login=usuario.login,
-            email=usuario.email,
-            perfil=usuario.perfil,
-            ativo=usuario.ativo,
-            matricula=usuario.matricula,
-            curso=usuario.curso,
-            periodo=usuario.periodo,
-            disciplinasInteresse=usuario.disciplinasInteresse
-        )
-    else:
-        return DocenteResponse(
-            id=usuario.id,
-            nome=usuario.nome,
-            login=usuario.login,
-            email=usuario.email,
-            perfil=usuario.perfil,
-            ativo=usuario.ativo,
-            siape=usuario.siape,
-            departamento=usuario.departamento,
-            isCoordenador=usuario.isCoordenador,
-            disciplinas=usuario.disciplinas
-        )
+    return UsuarioResponse.from_domain(usuario)
 
 
 @router.get(
@@ -110,48 +86,7 @@ def detalhar_usuario(
         usuario = request.app.state.usuario_service.buscar_usuario_por_id(id)
     except UsuarioNaoEncontradoException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
-    if usuario.perfil == TipoPerfil.MONITOR:
-        return MonitorResponse(
-            id=usuario.id,
-            nome=usuario.nome,
-            login=usuario.login,
-            email=usuario.email,
-            perfil=usuario.perfil,
-            ativo=usuario.ativo,
-            matricula=usuario.matricula,
-            curso=usuario.curso,
-            periodo=usuario.periodo,
-            disciplinasInteresse=usuario.disciplinasInteresse,
-            cargaHoraria=usuario.cargaHoraria,
-            disponivel=usuario.disponivel,
-            disciplinaVinculada=usuario.disciplinaVinculada,
-        )
-    elif usuario.perfil == TipoPerfil.DISCENTE:
-        return DiscenteResponse(
-            id=usuario.id,
-            nome=usuario.nome,
-            login=usuario.login,
-            email=usuario.email,
-            perfil=usuario.perfil,
-            ativo=usuario.ativo,
-            matricula=usuario.matricula,
-            curso=usuario.curso,
-            periodo=usuario.periodo,
-            disciplinasInteresse=usuario.disciplinasInteresse,
-        )
-    else:
-        return DocenteResponse(
-            id=usuario.id,
-            nome=usuario.nome,
-            login=usuario.login,
-            email=usuario.email,
-            perfil=usuario.perfil,
-            ativo=usuario.ativo,
-            siape=usuario.siape,
-            departamento=usuario.departamento,
-            isCoordenador=usuario.isCoordenador,
-            disciplinas=usuario.disciplinas,
-        )
+    return UsuarioResponse.from_domain(usuario)
 
 @router.patch("/{id}/promover", response_model=MonitorResponse, summary="Promover Aluno para Monitor")
 def promover_usuario(
@@ -227,45 +162,4 @@ def revogar_monitor(
 @router.post("/login", status_code=status.HTTP_200_OK, summary="Realizar login do usuário")
 def login(login_data: LoginRequest, request: Request):
     usuario = request.app.state.usuario_service.login_usuario(login_data.login, login_data.senha)
-    if usuario.perfil == TipoPerfil.MONITOR:
-        return MonitorResponse(
-            id=usuario.id,
-            nome=usuario.nome,
-            login=usuario.login,
-            email=usuario.email,
-            perfil=usuario.perfil,
-            ativo=usuario.ativo,
-            matricula=usuario.matricula,
-            curso=usuario.curso,
-            periodo=usuario.periodo,
-            disciplinasInteresse=usuario.disciplinasInteresse,
-            cargaHoraria=usuario.cargaHoraria,
-            disponivel=usuario.disponivel,
-            disciplinaVinculada=usuario.disciplinaVinculada,
-        )
-    elif usuario.perfil == TipoPerfil.DISCENTE:
-        return DiscenteResponse(
-            id=usuario.id,
-            nome=usuario.nome,
-            login=usuario.login,
-            email=usuario.email,
-            perfil=usuario.perfil,
-            ativo=usuario.ativo,
-            matricula=usuario.matricula,
-            curso=usuario.curso,
-            periodo=usuario.periodo,
-            disciplinasInteresse=usuario.disciplinasInteresse,
-        )
-    else:
-        return DocenteResponse(
-            id=usuario.id,
-            nome=usuario.nome,
-            login=usuario.login,
-            email=usuario.email,
-            perfil=usuario.perfil,
-            ativo=usuario.ativo,
-            siape=usuario.siape,
-            departamento=usuario.departamento,
-            isCoordenador=usuario.isCoordenador,
-            disciplinas=usuario.disciplinas,
-        )
+    return UsuarioResponse.from_domain(usuario)

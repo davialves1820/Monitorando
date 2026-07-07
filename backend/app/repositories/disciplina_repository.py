@@ -1,10 +1,12 @@
 """
-Repositório de disciplinas com persistência em banco de dados SQLite.
+Implementação SQLite do repositório de disciplinas.
 
 Responsabilidades:
 - Mapear objetos Disciplina para linhas SQL e vice-versa.
 - Executar operações CRUD sobre a tabela `disciplinas`.
 - Converter erros sqlite3.DatabaseError em DatabaseException.
+
+Selecionada quando REPO_BACKEND=sqlite (padrão) — ver app/repositories/factory.py.
 """
 
 import sqlite3
@@ -14,6 +16,7 @@ from uuid import UUID
 from app.database import get_connection
 from app.exceptions import DatabaseException
 from app.models.disciplina import Disciplina
+from app.repositories.abstract_disciplina_repository import AbstractDisciplinaRepository
 
 
 def _row_para_disciplina(row: sqlite3.Row) -> Disciplina:
@@ -27,7 +30,7 @@ def _row_para_disciplina(row: sqlite3.Row) -> Disciplina:
     )
 
 
-class DisciplinaRepository:
+class SQLiteDisciplinaRepository(AbstractDisciplinaRepository):
     """
     Repositório de disciplinas com persistência em SQLite.
 
@@ -89,7 +92,3 @@ class DisciplinaRepository:
             return _row_para_disciplina(row) if row else None
         except sqlite3.DatabaseError as e:
             raise DatabaseException(f"Erro ao buscar disciplina por código: {e}")
-
-
-# Instância global — mesma interface de antes, agora com SQLite por baixo
-disciplina_repository = DisciplinaRepository()

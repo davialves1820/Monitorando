@@ -1,44 +1,43 @@
 """
 Configuração global de testes (pytest conftest).
 
-Estratégia de isolamento de banco de dados:
-- Define a variável de ambiente `DB_PATH` apontando para um arquivo
-  temporário de testes (`monitorando_test.db`) ANTES de qualquer importação
-  dos módulos da aplicação.
-- A fixture `reset_banco` (autouse em módulos que a incluem) limpa todas
-  as tabelas entre os testes, garantindo isolamento sem recriação do schema.
+Estratégia de isolamento:
+- Define REPO_BACKEND=ram ANTES de importar qualquer módulo da app.
+  Os repositórios InMemory não fazem I/O de disco — cada teste parte de
+  um estado limpo sem necessidade de limpar arquivo .db.
+- A fixture `reset_repositorios` (autouse) reseta o store entre os testes
+  chamando .clear() diretamente nos repositórios injetados via app.state.
 """
 
 import os
-import sqlite3
 
-# Define o banco de dados de testes ANTES de importar qualquer módulo da app,
-# pois `database.py` lê DB_PATH no momento da importação do módulo.
-os.environ["DB_PATH"] = "monitorando_test.db"
+# Define o backend RAM ANTES de importar qualquer módulo da app,
+# pois factory.py lê REPO_BACKEND no momento da chamada.
+os.environ["REPO_BACKEND"] = "ram"
 
 import pytest  # noqa: E402 — import após setenv é intencional
+from fastapi.testclient import TestClient  # noqa: E402
 
-from app.database import inicializar_banco  # noqa: E402
+from app.main import app  # noqa: E402
 
 
-@pytest.fixture(scope="session", autouse=True)
-def criar_schema():
+@pytest.fixture(scope="session")
+def client():
+    """Cliente HTTP de testes reutilizado por toda a sessão."""
+    with TestClient(app) as c:
+        yield c
+
+
+@pytest.fixture(autouse=True)
+def reset_repositorios(client):
     """
-    Cria o schema do banco de testes uma única vez por sessão de testes.
-    Garante que as tabelas existam antes de qualquer teste rodar.
+    Limpa os stores InMemory antes e após cada teste.
+    Garante isolamento total sem tocar em disco.
     """
-    inicializar_banco()
+    app.state.disciplina_service._repo.clear()
+    app.state.usuario_service._repo.clear()
+    app.state.inscricao_monitoria_service._inscricao_repo.clear()
     yield
-    # Limpeza final: remove o arquivo de banco de testes após a sessão.
-    # No Windows, o SQLite pode manter o arquivo aberto brevemente após o
-    # último uso — por isso usamos try/except para não falhar o teardown.
-    db_path = os.environ.get("DB_PATH", "monitorando_test.db")
-    import gc
-    import time
-    gc.collect()  # força GC para fechar conexões que ainda estão na memória
-    time.sleep(0.1)  # aguarda o OS liberar o handle do arquivo
-    try:
-        if os.path.exists(db_path):
-            os.remove(db_path)
-    except PermissionError:
-        pass  # arquivo ainda em uso — será limpo no próximo run
+    app.state.disciplina_service._repo.clear()
+    app.state.usuario_service._repo.clear()
+    app.state.inscricao_monitoria_service._inscricao_repo.clear()

@@ -8,12 +8,26 @@ from app.models.inscricao_monitoria import (
     InscricaoMonitoriaCadastro,
     InscricaoMonitoriaResponse,
 )
-from app.repositories.disciplina_repository import disciplina_repository
-from app.repositories.inscricao_monitoria_repository import inscricao_monitoria_repository
-from app.repositories.usuario_repository import usuario_repository
+from app.repositories.abstract_disciplina_repository import AbstractDisciplinaRepository
+from app.repositories.abstract_inscricao_monitoria_repository import AbstractInscricaoMonitoriaRepository
+from app.repositories.abstract_usuario_repository import AbstractUsuarioRepository
 
 
 class InscricaoMonitoriaService:
+    def __init__(
+        self,
+        inscricao_repo: AbstractInscricaoMonitoriaRepository,
+        usuario_repo: AbstractUsuarioRepository,
+        disciplina_repo: AbstractDisciplinaRepository,
+    ) -> None:
+        """
+        Injeção de dependência: o service depende apenas das interfaces,
+        nunca de implementações concretas (DIP).
+        """
+        self._inscricao_repo = inscricao_repo
+        self._usuario_repo   = usuario_repo
+        self._disciplina_repo = disciplina_repo
+
     def cadastrar_inscricao(self, cadastro: InscricaoMonitoriaCadastro) -> InscricaoMonitoria:
         self._validar_relacionamentos(cadastro.usuario_id, cadastro.disciplina_id)
         motivacao = self._validar_motivacao(cadastro.motivacao)
@@ -23,17 +37,17 @@ class InscricaoMonitoriaService:
             disciplina_id=cadastro.disciplina_id,
             motivacao=motivacao,
         )
-        inscricao_monitoria_repository.add(inscricao)
+        self._inscricao_repo.add(inscricao)
         return inscricao
 
     def listar_inscricoes(self) -> List[InscricaoMonitoriaResponse]:
         return [
             self._to_response(inscricao)
-            for inscricao in inscricao_monitoria_repository.find_all()
+            for inscricao in self._inscricao_repo.find_all()
         ]
 
     def buscar_inscricao_por_id(self, id: UUID) -> InscricaoMonitoria:
-        inscricao = inscricao_monitoria_repository.find_by_id(id)
+        inscricao = self._inscricao_repo.find_by_id(id)
         if inscricao is None:
             raise HTTPException(
                 status_code=404,
@@ -58,11 +72,11 @@ class InscricaoMonitoriaService:
             motivacao=motivacao,
             status=status,
         )
-        inscricao_monitoria_repository.update(inscricao)
+        self._inscricao_repo.update(inscricao)
         return inscricao
 
     def remover_inscricao(self, id: UUID) -> None:
-        removida = inscricao_monitoria_repository.delete(id)
+        removida = self._inscricao_repo.delete(id)
         if not removida:
             raise HTTPException(
                 status_code=404,
@@ -70,17 +84,17 @@ class InscricaoMonitoriaService:
             )
 
     def contar_inscricoes(self) -> int:
-        return inscricao_monitoria_repository.count()
+        return self._inscricao_repo.count()
 
     def _validar_relacionamentos(self, usuario_id: UUID, disciplina_id: UUID) -> None:
-        if usuario_repository.find_by_id(usuario_id) is None:
+        if self._usuario_repo.find_by_id(usuario_id) is None:
             raise HTTPException(
                 status_code=404,
                 detail=f"Usuario com id '{usuario_id}' nao encontrado."
             )
         disciplina_existe = any(
             disciplina.id == disciplina_id
-            for disciplina in disciplina_repository.find_all()
+            for disciplina in self._disciplina_repo.find_all()
         )
         if not disciplina_existe:
             raise HTTPException(
@@ -114,6 +128,3 @@ class InscricaoMonitoriaService:
             motivacao=inscricao.motivacao,
             status=inscricao.status,
         )
-
-
-inscricao_monitoria_service = InscricaoMonitoriaService()

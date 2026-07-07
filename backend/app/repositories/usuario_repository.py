@@ -1,21 +1,24 @@
 """
-Repositório de usuários com persistência em banco de dados SQLite.
+Implementação SQLite do repositório de usuários.
 
 Responsabilidades:
 - Mapear objetos de domínio (Discente, Docente, Monitor) para linhas SQL.
 - Executar operações CRUD sobre a tabela `usuarios`.
 - Converter erros sqlite3.DatabaseError em DatabaseException.
+
+Selecionada quando REPO_BACKEND=sqlite (padrão) — ver app/repositories/factory.py.
 """
 
 import json
 import sqlite3
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from uuid import UUID
 
 from app.database import get_connection
 from app.exceptions import DatabaseException
 from app.models.enums import TipoPerfil
 from app.models.usuario import Discente, Docente, Monitor, Usuario
+from app.repositories.abstract_usuario_repository import AbstractUsuarioRepository
 
 # ---------------------------------------------------------------------------
 # Constantes
@@ -147,7 +150,7 @@ def _usuario_para_params(usuario: Usuario) -> dict:
     return params
 
 
-class UsuarioRepository:
+class SQLiteUsuarioRepository(AbstractUsuarioRepository):
     """
     Repositório de usuários com persistência em SQLite.
 
@@ -201,7 +204,7 @@ class UsuarioRepository:
         except sqlite3.DatabaseError as e:
             raise DatabaseException(f"Erro ao listar usuários: {e}")
 
-    def find_all_paginated(self, skip: int, limit: int) -> tuple[List[Usuario], int]:
+    def find_all_paginated(self, skip: int, limit: int) -> Tuple[List[Usuario], int]:
         """
         Retorna a página solicitada e o total de registros.
 
@@ -226,7 +229,7 @@ class UsuarioRepository:
         matricula: Optional[str],
         skip: int,
         limit: int,
-    ) -> tuple[List[Usuario], int]:
+    ) -> Tuple[List[Usuario], int]:
         """
         Filtra usuários por nome parcial (case-insensitive) e/ou matrícula exata.
         Retorna a fatia paginada e o total de resultados filtrados.
@@ -323,7 +326,3 @@ class UsuarioRepository:
             return _row_para_usuario(row) if row else None
         except sqlite3.DatabaseError as e:
             raise DatabaseException(f"Erro ao buscar usuário por login: {e}")
-
-
-# Instância global — mesma interface de antes, agora com SQLite por baixo
-usuario_repository = UsuarioRepository()

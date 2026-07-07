@@ -3,25 +3,11 @@ from fastapi.testclient import TestClient
 
 from app.controllers.facade_singleton_controller import FacadeSingletonController
 from app.main import app
-from app.repositories.disciplina_repository import disciplina_repository
-from app.repositories.inscricao_monitoria_repository import inscricao_monitoria_repository
-from app.repositories.usuario_repository import usuario_repository
 
-client = TestClient(app)
+# Isolamento é feito pela fixture `reset_repositorios` (autouse) do conftest.py.
 
 
-@pytest.fixture(autouse=True)
-def limpar_banco():
-    inscricao_monitoria_repository.clear()
-    disciplina_repository.clear()
-    usuario_repository.clear()
-    yield
-    inscricao_monitoria_repository.clear()
-    disciplina_repository.clear()
-    usuario_repository.clear()
-
-
-def _criar_usuario():
+def _criar_usuario(client: TestClient):
     response = client.post("/usuarios", json={
         "nome": "Ana Silva",
         "login": "anasilva",
@@ -35,7 +21,7 @@ def _criar_usuario():
     return response.json()
 
 
-def _criar_disciplina():
+def _criar_disciplina(client: TestClient):
     response = client.post("/disciplinas/", json={
         "codigo": "MPS001",
         "nome": "Metodos de Projeto de Software",
@@ -46,9 +32,9 @@ def _criar_disciplina():
     return response.json()
 
 
-def _criar_inscricao():
-    usuario = _criar_usuario()
-    disciplina = _criar_disciplina()
+def _criar_inscricao(client: TestClient):
+    usuario    = _criar_usuario(client)
+    disciplina = _criar_disciplina(client)
     response = client.post("/inscricoes-monitoria/", json={
         "usuario_id": usuario["id"],
         "disciplina_id": disciplina["id"],
@@ -58,8 +44,8 @@ def _criar_inscricao():
     return response.json(), usuario, disciplina
 
 
-def test_criar_inscricao_monitoria_com_relacionamentos():
-    inscricao, usuario, disciplina = _criar_inscricao()
+def test_criar_inscricao_monitoria_com_relacionamentos(client: TestClient):
+    inscricao, usuario, disciplina = _criar_inscricao(client)
 
     assert inscricao["usuario_id"] == usuario["id"]
     assert inscricao["disciplina_id"] == disciplina["id"]
@@ -67,8 +53,8 @@ def test_criar_inscricao_monitoria_com_relacionamentos():
     assert inscricao["status"] == "PENDENTE"
 
 
-def test_listar_e_detalhar_inscricao_monitoria():
-    inscricao, _, _ = _criar_inscricao()
+def test_listar_e_detalhar_inscricao_monitoria(client: TestClient):
+    inscricao, _, _ = _criar_inscricao(client)
 
     listagem = client.get("/inscricoes-monitoria/")
     assert listagem.status_code == 200
@@ -80,8 +66,8 @@ def test_listar_e_detalhar_inscricao_monitoria():
     assert detalhe.json()["id"] == inscricao["id"]
 
 
-def test_atualizar_inscricao_monitoria():
-    inscricao, usuario, disciplina = _criar_inscricao()
+def test_atualizar_inscricao_monitoria(client: TestClient):
+    inscricao, usuario, disciplina = _criar_inscricao(client)
 
     response = client.put(f"/inscricoes-monitoria/{inscricao['id']}", json={
         "usuario_id": usuario["id"],
@@ -96,8 +82,8 @@ def test_atualizar_inscricao_monitoria():
     assert data["status"] == "APROVADA"
 
 
-def test_remover_inscricao_monitoria():
-    inscricao, _, _ = _criar_inscricao()
+def test_remover_inscricao_monitoria(client: TestClient):
+    inscricao, _, _ = _criar_inscricao(client)
 
     response = client.delete(f"/inscricoes-monitoria/{inscricao['id']}")
     assert response.status_code == 204
@@ -106,8 +92,8 @@ def test_remover_inscricao_monitoria():
     assert detalhe.status_code == 404
 
 
-def test_criar_inscricao_rejeita_usuario_inexistente():
-    disciplina = _criar_disciplina()
+def test_criar_inscricao_rejeita_usuario_inexistente(client: TestClient):
+    disciplina = _criar_disciplina(client)
 
     response = client.post("/inscricoes-monitoria/", json={
         "usuario_id": "00000000-0000-0000-0000-000000000001",
@@ -119,9 +105,15 @@ def test_criar_inscricao_rejeita_usuario_inexistente():
     assert "Usuario" in response.json()["detail"]
 
 
-def test_facade_singleton_controller_retorna_quantidade_total_de_entidades():
-    _criar_inscricao()
+def test_facade_singleton_controller_retorna_quantidade_total_de_entidades(client: TestClient):
+    """
+    Testa:
+    1. Que FacadeSingletonController é um Singleton (mesma instância).
+    2. Que o endpoint /facade/quantidade-entidades conta corretamente.
+    """
+    _criar_inscricao(client)  # cria 1 usuario + 1 disciplina + 1 inscricao
 
+    # Singleton: duas instanciações retornam o mesmo objeto
     assert FacadeSingletonController() is FacadeSingletonController()
 
     response = client.get("/facade/quantidade-entidades")

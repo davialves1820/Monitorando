@@ -1,5 +1,5 @@
 """
-Repositorio de inscricoes de monitoria com persistencia em SQLite.
+Implementação SQLite do repositório de inscrições de monitoria.
 """
 
 import sqlite3
@@ -9,6 +9,7 @@ from uuid import UUID
 from app.database import get_connection
 from app.exceptions import DatabaseException
 from app.models.inscricao_monitoria import InscricaoMonitoria
+from app.repositories.abstract_inscricao_monitoria_repository import AbstractInscricaoMonitoriaRepository
 
 
 def _row_para_inscricao(row: sqlite3.Row) -> InscricaoMonitoria:
@@ -21,7 +22,8 @@ def _row_para_inscricao(row: sqlite3.Row) -> InscricaoMonitoria:
     )
 
 
-class InscricaoMonitoriaRepository:
+class SQLiteInscricaoMonitoriaRepository(AbstractInscricaoMonitoriaRepository):
+
     def clear(self) -> None:
         try:
             with get_connection() as conn:
@@ -108,6 +110,3 @@ class InscricaoMonitoriaRepository:
                 return conn.execute("SELECT COUNT(*) FROM inscricoes_monitoria").fetchone()[0]
         except sqlite3.DatabaseError as e:
             raise DatabaseException(f"Erro ao contar inscricoes de monitoria: {e}")
-
-
-inscricao_monitoria_repository = InscricaoMonitoriaRepository()

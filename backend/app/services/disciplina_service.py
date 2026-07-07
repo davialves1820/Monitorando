@@ -1,9 +1,17 @@
 from fastapi import HTTPException
 from typing import List
 from app.models.disciplina import Disciplina, DisciplinaCadastro, DisciplinaResponse
-from app.repositories.disciplina_repository import disciplina_repository
+from app.repositories.abstract_disciplina_repository import AbstractDisciplinaRepository
+
 
 class DisciplinaService:
+    def __init__(self, repo: AbstractDisciplinaRepository) -> None:
+        """
+        Injeção de dependência: o service depende apenas da interface,
+        nunca de uma implementação concreta (DIP).
+        """
+        self._repo = repo
+
     def cadastrar_disciplina(self, cadastro: DisciplinaCadastro) -> Disciplina:
         # 1. Validar campos obrigatórios
         if (
@@ -22,7 +30,7 @@ class DisciplinaService:
         codigo = cadastro.codigo.strip().upper()
 
         # 2. Validar se código já existe
-        if disciplina_repository.find_by_codigo(codigo) is not None:
+        if self._repo.find_by_codigo(codigo) is not None:
             raise HTTPException(
                 status_code=400,
                 detail="Já existe uma disciplina com este código."
@@ -36,12 +44,12 @@ class DisciplinaService:
             periodo=cadastro.periodo
         )
 
-        # 4. Salvar na coleção em memória
-        disciplina_repository.add(disciplina)
+        # 4. Salvar no repositório
+        self._repo.add(disciplina)
         return disciplina
 
     def listar_disciplinas(self) -> List[DisciplinaResponse]:
-        disciplinas_db = disciplina_repository.find_all()
+        disciplinas_db = self._repo.find_all()
 
         return [
             DisciplinaResponse(
@@ -53,5 +61,3 @@ class DisciplinaService:
             )
             for d in disciplinas_db
         ]
-
-disciplina_service = DisciplinaService()

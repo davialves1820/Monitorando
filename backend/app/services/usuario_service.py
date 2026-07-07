@@ -3,7 +3,7 @@ from typing import Union, Optional
 from uuid import UUID
 from app.models.enums import TipoPerfil
 from app.models.usuario import UsuarioCadastro, Discente, Docente, UsuarioResponse, PaginatedUsuarios, Monitor, PromoverRequest
-from app.repositories.usuario_repository import usuario_repository
+from app.repositories.abstract_usuario_repository import AbstractUsuarioRepository
 from app.exceptions import (
     LoginException,
     LoginVazioException,
@@ -18,6 +18,13 @@ from app.exceptions import (
 )
 
 class UsuarioService:
+    def __init__(self, repo: AbstractUsuarioRepository) -> None:
+        """
+        Injeção de dependência: o service depende apenas da interface,
+        nunca de uma implementação concreta (DIP).
+        """
+        self._repo = repo
+
     def cadastrar_usuario(self, cadastro: UsuarioCadastro) -> Union[Discente, Docente]:
         # 1. Validar as regras do login
         self.validar_login(cadastro.login)
@@ -49,7 +56,7 @@ class UsuarioService:
             )
 
         # 4. Validar se o e-mail já está cadastrado
-        if usuario_repository.find_by_email(email) is not None:
+        if self._repo.find_by_email(email) is not None:
             raise HTTPException(
                 status_code=400,
                 detail="E-mail inválido ou já cadastrado. Utilize seu e-mail institucional."
@@ -93,8 +100,8 @@ class UsuarioService:
                 disciplinas=[]
             )
 
-        # 7. Salvar na coleção em memória
-        usuario_repository.add(usuario)
+        # 7. Salvar no repositório
+        self._repo.add(usuario)
         return usuario
 
     def listar_usuarios(self, pagina: int, limite: int) -> PaginatedUsuarios:
@@ -108,7 +115,7 @@ class UsuarioService:
             limite = limite_maximo
 
         skip = (pagina - 1) * limite
-        usuarios_db, total = usuario_repository.find_all_paginated(skip=skip, limit=limite)
+        usuarios_db, total = self._repo.find_all_paginated(skip=skip, limit=limite)
 
         usuarios_response = [
             UsuarioResponse(
@@ -145,7 +152,7 @@ class UsuarioService:
             limite = limite_maximo
 
         skip = (pagina - 1) * limite
-        usuarios_db, total = usuario_repository.find_by_filters(
+        usuarios_db, total = self._repo.find_by_filters(
             nome=nome,
             matricula=matricula,
             skip=skip,
@@ -183,7 +190,7 @@ class UsuarioService:
 
     def buscar_usuario_por_id(self, id: UUID) -> Union[Discente, Docente]:
         """Retorna um usuário pelo ID. Lança 404 se não encontrado."""
-        usuario = usuario_repository.find_by_id(id)
+        usuario = self._repo.find_by_id(id)
         if usuario is None:
             raise HTTPException(
                 status_code=404,
@@ -228,7 +235,7 @@ class UsuarioService:
             disponivel=True
         )
         
-        usuario_repository.update(monitor)
+        self._repo.update(monitor)
         return monitor
 
     def revogar_monitor(self, id: UUID) -> Discente:
@@ -254,7 +261,7 @@ class UsuarioService:
             disciplinasInteresse=usuario.disciplinasInteresse
         )
         
-        usuario_repository.update(aluno)
+        self._repo.update(aluno)
         return aluno
 
     def validar_login(self, login: str) -> None:
@@ -282,11 +289,9 @@ class UsuarioService:
 
     def login_usuario(self, login: str, senha: str) -> Union[Discente, Docente, Monitor]:
         self.validar_login(login)
-        usuario = usuario_repository.find_by_login(login.strip())
+        usuario = self._repo.find_by_login(login.strip())
         if usuario is None:
             raise CredenciaisInvalidasException()
         if usuario.senha != senha:
             raise CredenciaisInvalidasException()
         return usuario
-
-usuario_service = UsuarioService()

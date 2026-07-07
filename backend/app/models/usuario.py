@@ -60,6 +60,51 @@ class UsuarioResponse(BaseModel):
     perfil: TipoPerfil
     ativo: bool
 
+    @staticmethod
+    def from_domain(usuario: "Usuario") -> "UsuarioResponse":
+        if usuario.perfil == TipoPerfil.MONITOR:
+            return MonitorResponse(
+                id=usuario.id,
+                nome=usuario.nome,
+                login=usuario.login,
+                email=usuario.email,
+                perfil=usuario.perfil,
+                ativo=usuario.ativo,
+                matricula=usuario.matricula,
+                curso=usuario.curso,
+                periodo=usuario.periodo,
+                disciplinasInteresse=usuario.disciplinasInteresse,
+                cargaHoraria=usuario.cargaHoraria,
+                disponivel=usuario.disponivel,
+                disciplinaVinculada=usuario.disciplinaVinculada,
+            )
+        elif usuario.perfil == TipoPerfil.DISCENTE:
+            return DiscenteResponse(
+                id=usuario.id,
+                nome=usuario.nome,
+                login=usuario.login,
+                email=usuario.email,
+                perfil=usuario.perfil,
+                ativo=usuario.ativo,
+                matricula=usuario.matricula,
+                curso=usuario.curso,
+                periodo=usuario.periodo,
+                disciplinasInteresse=usuario.disciplinasInteresse,
+            )
+        else:
+            return DocenteResponse(
+                id=usuario.id,
+                nome=usuario.nome,
+                login=usuario.login,
+                email=usuario.email,
+                perfil=usuario.perfil,
+                ativo=usuario.ativo,
+                siape=usuario.siape,
+                departamento=usuario.departamento,
+                isCoordenador=usuario.isCoordenador,
+                disciplinas=usuario.disciplinas,
+            )
+
 class DiscenteResponse(UsuarioResponse):
     matricula: str
     curso: str = ""

@@ -74,3 +74,51 @@ class SenhaSemCaractereEspecialException(SenhaException):
     def __init__(self, message="A senha deve conter pelo menos um caractere especial (!@#$%^&*()_+-=[]{}|')."):
         self.message = message
         super().__init__(self.message)
+
+
+class UsuarioException(Exception):
+    """Classe base para exceções de domínio de usuário."""
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(self.message)
+
+
+class CamposObrigatoriosException(UsuarioException):
+    def __init__(self, message="Preencha todos os campos obrigatórios para continuar"):
+        super().__init__(message)
+
+
+class EmailInvalidoException(UsuarioException):
+    def __init__(self, message="E-mail inválido ou já cadastrado. Utilize seu e-mail institucional."):
+        super().__init__(message)
+
+
+class EmailJaCadastradoException(UsuarioException):
+    def __init__(self, message="E-mail inválido ou já cadastrado. Utilize seu e-mail institucional."):
+        super().__init__(message)
+
+
+class UsuarioNaoEncontradoException(UsuarioException):
+    def __init__(self, message="Usuário não encontrado."):
+        super().__init__(message)
+
+
+class UsuarioJaEMonitorException(UsuarioException):
+    def __init__(self, message="Usuário já é um monitor."):
+        super().__init__(message)
+
+
+class PromocaoApenasParaDiscentesException(UsuarioException):
+    def __init__(self, message="Apenas discentes podem ser promovidos a monitor."):
+        super().__init__(message)
+
+
+class DisciplinaVinculadaObrigatoriaException(UsuarioException):
+    def __init__(self, message="Disciplina vinculada é obrigatória."):
+        super().__init__(message)
+
+
+class UsuarioNaoEMonitorException(UsuarioException):
+    def __init__(self, message="O usuário não é um monitor."):
+        super().__init__(message)
+

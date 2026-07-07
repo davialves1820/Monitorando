@@ -1,4 +1,3 @@
-from fastapi import HTTPException
 from typing import Union, Optional
 from uuid import UUID
 from app.models.enums import TipoPerfil
@@ -14,7 +13,15 @@ from app.exceptions import (
     SenhaSemLetraMaiusculaException,
     SenhaSemLetraMinusculaException,
     SenhaSemNumeroException,
-    SenhaSemCaractereEspecialException
+    SenhaSemCaractereEspecialException,
+    CamposObrigatoriosException,
+    EmailInvalidoException,
+    EmailJaCadastradoException,
+    UsuarioNaoEncontradoException,
+    UsuarioJaEMonitorException,
+    PromocaoApenasParaDiscentesException,
+    DisciplinaVinculadaObrigatoriaException,
+    UsuarioNaoEMonitorException
 )
 
 class UsuarioService:
@@ -38,10 +45,7 @@ class UsuarioService:
             or not cadastro.senha 
             or not cadastro.senha.strip()
         ):
-            raise HTTPException(
-                status_code=400,
-                detail="Preencha todos os campos obrigatórios para continuar"
-            )
+            raise CamposObrigatoriosException()
 
         # 3. Validar e-mail institucional e determinar perfil (RN008)
         email = cadastro.email.strip().lower()
@@ -50,17 +54,11 @@ class UsuarioService:
         elif email.endswith("@ufpb.br") or email.endswith("@ci.ufpb.br"):
             perfil = TipoPerfil.DOCENTE
         else:
-            raise HTTPException(
-                status_code=400,
-                detail="E-mail inválido ou já cadastrado. Utilize seu e-mail institucional."
-            )
+            raise EmailInvalidoException()
 
         # 4. Validar se o e-mail já está cadastrado
         if self._repo.find_by_email(email) is not None:
-            raise HTTPException(
-                status_code=400,
-                detail="E-mail inválido ou já cadastrado. Utilize seu e-mail institucional."
-            )
+            raise EmailJaCadastradoException()
 
         # 5. Validar política de senha (RN009 / IAM)
         self.validar_senha(cadastro.senha)
@@ -70,10 +68,7 @@ class UsuarioService:
         if perfil == TipoPerfil.DISCENTE:
             # Matrícula é obrigatória para discentes
             if not cadastro.matricula or not cadastro.matricula.strip():
-                raise HTTPException(
-                    status_code=400,
-                    detail="Preencha todos os campos obrigatórios para continuar"
-                )
+                raise CamposObrigatoriosException()
             
             usuario = Discente(
                 nome=cadastro.nome.strip(),
@@ -167,7 +162,7 @@ class UsuarioService:
                 detalhe = f"Nenhum usuário encontrado com nome contendo '{nome}'."
             elif matricula:
                 detalhe = f"Nenhum usuário encontrado com matrícula '{matricula}'."
-            raise HTTPException(status_code=404, detail=detalhe)
+            raise UsuarioNaoEncontradoException(detalhe)
 
         usuarios_response = [
             UsuarioResponse(
@@ -192,31 +187,19 @@ class UsuarioService:
         """Retorna um usuário pelo ID. Lança 404 se não encontrado."""
         usuario = self._repo.find_by_id(id)
         if usuario is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Usuário com id '{id}' não encontrado."
-            )
+            raise UsuarioNaoEncontradoException(f"Usuário com id '{id}' não encontrado.")
         return usuario
 
     def promover_usuario(self, id: UUID, request: PromoverRequest) -> Monitor:
         usuario = self.buscar_usuario_por_id(id)
         
         if usuario.perfil == TipoPerfil.MONITOR:
-            raise HTTPException(
-                status_code=400,
-                detail="Usuário já é um monitor."
-            )
+            raise UsuarioJaEMonitorException()
         elif usuario.perfil != TipoPerfil.DISCENTE:
-            raise HTTPException(
-                status_code=400,
-                detail="Apenas discentes podem ser promovidos a monitor."
-            )
+            raise PromocaoApenasParaDiscentesException()
             
         if not request.disciplinaVinculada or not request.disciplinaVinculada.strip():
-            raise HTTPException(
-                status_code=400,
-                detail="Disciplina vinculada é obrigatória."
-            )
+            raise DisciplinaVinculadaObrigatoriaException()
             
         monitor = Monitor(
             id=usuario.id,
@@ -242,10 +225,7 @@ class UsuarioService:
         usuario = self.buscar_usuario_por_id(id)
         
         if usuario.perfil != TipoPerfil.MONITOR:
-            raise HTTPException(
-                status_code=400,
-                detail="O usuário não é um monitor."
-            )
+            raise UsuarioNaoEMonitorException()
             
         aluno = Discente(
             id=usuario.id,

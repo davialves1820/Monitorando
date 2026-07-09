@@ -1,5 +1,6 @@
 from typing import Union, Optional
 from uuid import UUID
+from app.factories.usuario_factory import UsuarioFactory
 from app.models.enums import TipoPerfil
 from app.models.usuario import UsuarioCadastro, Discente, Docente, UsuarioResponse, PaginatedUsuarios, Monitor, PromoverRequest
 from app.repositories.abstract_usuario_repository import AbstractUsuarioRepository
@@ -64,36 +65,18 @@ class UsuarioService:
         self.validar_senha(cadastro.senha)
         senha = cadastro.senha
 
-        # 6. Lógica específica por perfil
+        # 6. Lógica específica por perfil — criação delegada à UsuarioFactory
         if perfil == TipoPerfil.DISCENTE:
             # Matrícula é obrigatória para discentes
             if not cadastro.matricula or not cadastro.matricula.strip():
                 raise CamposObrigatoriosException()
-            
-            usuario = Discente(
-                nome=cadastro.nome.strip(),
-                login=cadastro.login.strip(),
-                email=email,
-                senha=senha,
-                perfil=perfil,
-                matricula=cadastro.matricula.strip(),
-                curso=cadastro.curso.strip() if cadastro.curso else "",
-                periodo=cadastro.periodo,
-                disciplinasInteresse=[]
-            )
+            # Ajusta o e-mail normalizado no cadastro antes de passar à factory
+            cadastro = cadastro.model_copy(update={"email": email})
+            usuario = UsuarioFactory.criar_discente(cadastro, perfil)
         else:
             # Docente
-            usuario = Docente(
-                nome=cadastro.nome.strip(),
-                login=cadastro.login.strip(),
-                email=email,
-                senha=senha,
-                perfil=perfil,
-                siape=cadastro.siape.strip() if cadastro.siape else "",
-                departamento=cadastro.departamento.strip() if cadastro.departamento else "",
-                isCoordenador=cadastro.isCoordenador if cadastro.isCoordenador is not None else False,
-                disciplinas=[]
-            )
+            cadastro = cadastro.model_copy(update={"email": email})
+            usuario = UsuarioFactory.criar_docente(cadastro, perfil)
 
         # 7. Salvar no repositório
         self._repo.add(usuario)
@@ -201,23 +184,7 @@ class UsuarioService:
         if not request.disciplinaVinculada or not request.disciplinaVinculada.strip():
             raise DisciplinaVinculadaObrigatoriaException()
             
-        monitor = Monitor(
-            id=usuario.id,
-            nome=usuario.nome,
-            login=usuario.login,
-            email=usuario.email,
-            senha=usuario.senha,
-            perfil=TipoPerfil.MONITOR,
-            ativo=usuario.ativo,
-            matricula=usuario.matricula,
-            curso=usuario.curso,
-            periodo=usuario.periodo,
-            disciplinasInteresse=usuario.disciplinasInteresse,
-            cargaHoraria=request.cargaHoraria,
-            disciplinaVinculada=request.disciplinaVinculada.strip(),
-            disponivel=True
-        )
-        
+        monitor = UsuarioFactory.promover_para_monitor(usuario, request)
         self._repo.update(monitor)
         return monitor
 
@@ -227,20 +194,7 @@ class UsuarioService:
         if usuario.perfil != TipoPerfil.MONITOR:
             raise UsuarioNaoEMonitorException()
             
-        aluno = Discente(
-            id=usuario.id,
-            nome=usuario.nome,
-            login=usuario.login,
-            email=usuario.email,
-            senha=usuario.senha,
-            perfil=TipoPerfil.DISCENTE,
-            ativo=usuario.ativo,
-            matricula=usuario.matricula,
-            curso=usuario.curso,
-            periodo=usuario.periodo,
-            disciplinasInteresse=usuario.disciplinasInteresse
-        )
-        
+        aluno = UsuarioFactory.revogar_monitor(usuario)
         self._repo.update(aluno)
         return aluno
 

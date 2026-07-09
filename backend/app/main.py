@@ -4,11 +4,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.repositories.factory import (
-    make_disciplina_repository,
-    make_usuario_repository,
-    make_inscricao_monitoria_repository,
-)
+from app.repositories.factory import get_repository_factory
 from app.services.disciplina_service import DisciplinaService
 from app.services.usuario_service import UsuarioService
 from app.services.inscricao_monitoria_service import InscricaoMonitoriaService
@@ -31,10 +27,13 @@ async def lifespan(app: FastAPI):
     """
     backend = os.environ.get("REPO_BACKEND", "sqlite").lower()
 
-    # --- repositórios ---
-    disciplina_repo  = make_disciplina_repository()
-    usuario_repo     = make_usuario_repository()
-    inscricao_repo   = make_inscricao_monitoria_repository()
+    # --- factory de repositórios (Factory Method) ---
+    repo_factory = get_repository_factory()
+
+    # --- repositórios (criados pela factory concreta) ---
+    disciplina_repo  = repo_factory.create_disciplina_repository()
+    usuario_repo     = repo_factory.create_usuario_repository()
+    inscricao_repo   = repo_factory.create_inscricao_monitoria_repository()
 
     # --- services (dependem da interface, não da implementação) ---
     disciplina_svc          = DisciplinaService(repo=disciplina_repo)

@@ -1,7 +1,10 @@
-from fastapi import HTTPException
 from typing import List
 from app.models.disciplina import Disciplina, DisciplinaCadastro, DisciplinaResponse
 from app.repositories.abstract_disciplina_repository import AbstractDisciplinaRepository
+from app.exceptions import (
+    DisciplinaCamposObrigatoriosException,
+    DisciplinaCodigoJaExisteException,
+)
 
 
 class DisciplinaService:
@@ -22,19 +25,13 @@ class DisciplinaService:
             or not cadastro.ementa
             or not cadastro.ementa.strip()
         ):
-            raise HTTPException(
-                status_code=400,
-                detail="Preencha todos os campos obrigatórios para continuar"
-            )
+            raise DisciplinaCamposObrigatoriosException()
 
         codigo = cadastro.codigo.strip().upper()
 
         # 2. Validar se código já existe
         if self._repo.find_by_codigo(codigo) is not None:
-            raise HTTPException(
-                status_code=400,
-                detail="Já existe uma disciplina com este código."
-            )
+            raise DisciplinaCodigoJaExisteException()
 
         # 3. Criar disciplina
         disciplina = Disciplina(

@@ -117,3 +117,55 @@ class UsuarioNaoEMonitorException(UsuarioException):
     def __init__(self, message="O usuário não é um monitor."):
         super().__init__(message)
 
+
+# ---------------------------------------------------------------------------
+# Exceções de Disciplina
+# ---------------------------------------------------------------------------
+
+class DisciplinaException(Exception):
+    """Classe base para exceções de domínio de disciplina."""
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(self.message)
+
+
+class DisciplinaCamposObrigatoriosException(DisciplinaException):
+    def __init__(self, message="Preencha todos os campos obrigatórios para continuar."):
+        super().__init__(message)
+
+
+class DisciplinaCodigoJaExisteException(DisciplinaException):
+    def __init__(self, message="Já existe uma disciplina com este código."):
+        super().__init__(message)
+
+
+class DisciplinaNaoEncontradaException(DisciplinaException):
+    def __init__(self, message="Disciplina não encontrada."):
+        super().__init__(message)
+
+
+# ---------------------------------------------------------------------------
+# Exceções de Inscrição de Monitoria
+# ---------------------------------------------------------------------------
+
+class InscricaoMonitoriaException(Exception):
+    """Classe base para exceções de domínio de inscrição de monitoria."""
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(self.message)
+
+
+class InscricaoNaoEncontradaException(InscricaoMonitoriaException):
+    def __init__(self, message="Inscrição de monitoria não encontrada."):
+        super().__init__(message)
+
+
+class InscricaoMotivacaoVaziaException(InscricaoMonitoriaException):
+    def __init__(self, message="A motivação é obrigatória."):
+        super().__init__(message)
+
+
+class InscricaoStatusInvalidoException(InscricaoMonitoriaException):
+    def __init__(self, message="Status deve ser PENDENTE, APROVADA ou REJEITADA."):
+        super().__init__(message)
+

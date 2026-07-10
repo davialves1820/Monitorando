@@ -1,10 +1,20 @@
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Request, status, HTTPException
 from typing import List
 from app.models.disciplina import DisciplinaCadastro, DisciplinaResponse
+from app.exceptions import (
+    DisciplinaCamposObrigatoriosException,
+    DisciplinaCodigoJaExisteException,
+)
 
 router = APIRouter(prefix="/disciplinas", tags=["Disciplinas"])
 
-@router.post("/", response_model=DisciplinaResponse, status_code=status.HTTP_201_CREATED, summary="Cadastrar disciplina")
+
+@router.post(
+    "/",
+    response_model=DisciplinaResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Cadastrar disciplina",
+)
 def cadastrar_disciplina(cadastro: DisciplinaCadastro, request: Request):
     """
     Cadastra uma nova disciplina.
@@ -13,7 +23,13 @@ def cadastrar_disciplina(cadastro: DisciplinaCadastro, request: Request):
     - **ementa**: Descrição da ementa
     - **periodo**: Período sugerido para cursar a disciplina
     """
-    return request.app.state.disciplina_service.cadastrar_disciplina(cadastro)
+    try:
+        return request.app.state.disciplina_service.cadastrar_disciplina(cadastro)
+    except DisciplinaCamposObrigatoriosException as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
+    except DisciplinaCodigoJaExisteException as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=e.message)
+
 
 @router.get("/", response_model=List[DisciplinaResponse], summary="Listar disciplinas")
 def listar_disciplinas(request: Request):

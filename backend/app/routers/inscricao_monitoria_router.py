@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Request, status, HTTPException
 from typing import List
 from uuid import UUID
 
@@ -7,13 +7,25 @@ from app.models.inscricao_monitoria import (
     InscricaoMonitoriaCadastro,
     InscricaoMonitoriaResponse,
 )
+from app.exceptions import (
+    InscricaoNaoEncontradaException,
+    InscricaoMotivacaoVaziaException,
+    InscricaoStatusInvalidoException,
+    UsuarioNaoEncontradoException,
+    DisciplinaNaoEncontradaException,
+)
 
 router = APIRouter(prefix="/inscricoes-monitoria", tags=["Inscricoes de Monitoria"])
 
 
 @router.post("/", response_model=InscricaoMonitoriaResponse, status_code=status.HTTP_201_CREATED)
 def cadastrar_inscricao(cadastro: InscricaoMonitoriaCadastro, request: Request):
-    return request.app.state.inscricao_monitoria_service.cadastrar_inscricao(cadastro)
+    try:
+        return request.app.state.inscricao_monitoria_service.cadastrar_inscricao(cadastro)
+    except (UsuarioNaoEncontradoException, DisciplinaNaoEncontradaException) as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
+    except InscricaoMotivacaoVaziaException as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
 
 
 @router.get("/", response_model=List[InscricaoMonitoriaResponse])
@@ -23,14 +35,27 @@ def listar_inscricoes(request: Request):
 
 @router.get("/{id}", response_model=InscricaoMonitoriaResponse)
 def detalhar_inscricao(id: UUID, request: Request):
-    return request.app.state.inscricao_monitoria_service.buscar_inscricao_por_id(id)
+    try:
+        return request.app.state.inscricao_monitoria_service.buscar_inscricao_por_id(id)
+    except InscricaoNaoEncontradaException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
 
 
 @router.put("/{id}", response_model=InscricaoMonitoriaResponse)
 def atualizar_inscricao(id: UUID, atualizacao: InscricaoMonitoriaAtualizacao, request: Request):
-    return request.app.state.inscricao_monitoria_service.atualizar_inscricao(id, atualizacao)
+    try:
+        return request.app.state.inscricao_monitoria_service.atualizar_inscricao(id, atualizacao)
+    except InscricaoNaoEncontradaException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
+    except (UsuarioNaoEncontradoException, DisciplinaNaoEncontradaException) as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
+    except (InscricaoMotivacaoVaziaException, InscricaoStatusInvalidoException) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def remover_inscricao(id: UUID, request: Request):
-    request.app.state.inscricao_monitoria_service.remover_inscricao(id)
+    try:
+        request.app.state.inscricao_monitoria_service.remover_inscricao(id)
+    except InscricaoNaoEncontradaException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)

@@ -1,4 +1,3 @@
-from fastapi import HTTPException
 from typing import List
 from uuid import UUID
 
@@ -11,6 +10,13 @@ from app.models.inscricao_monitoria import (
 from app.repositories.abstract_disciplina_repository import AbstractDisciplinaRepository
 from app.repositories.abstract_inscricao_monitoria_repository import AbstractInscricaoMonitoriaRepository
 from app.repositories.abstract_usuario_repository import AbstractUsuarioRepository
+from app.exceptions import (
+    InscricaoNaoEncontradaException,
+    InscricaoMotivacaoVaziaException,
+    InscricaoStatusInvalidoException,
+    UsuarioNaoEncontradoException,
+    DisciplinaNaoEncontradaException,
+)
 
 
 class InscricaoMonitoriaService:
@@ -24,8 +30,8 @@ class InscricaoMonitoriaService:
         Injeção de dependência: o service depende apenas das interfaces,
         nunca de implementações concretas (DIP).
         """
-        self._inscricao_repo = inscricao_repo
-        self._usuario_repo   = usuario_repo
+        self._inscricao_repo  = inscricao_repo
+        self._usuario_repo    = usuario_repo
         self._disciplina_repo = disciplina_repo
 
     def cadastrar_inscricao(self, cadastro: InscricaoMonitoriaCadastro) -> InscricaoMonitoria:
@@ -49,9 +55,8 @@ class InscricaoMonitoriaService:
     def buscar_inscricao_por_id(self, id: UUID) -> InscricaoMonitoria:
         inscricao = self._inscricao_repo.find_by_id(id)
         if inscricao is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Inscricao de monitoria com id '{id}' nao encontrada."
+            raise InscricaoNaoEncontradaException(
+                f"Inscrição de monitoria com id '{id}' não encontrada."
             )
         return inscricao
 
@@ -63,7 +68,7 @@ class InscricaoMonitoriaService:
         self.buscar_inscricao_por_id(id)
         self._validar_relacionamentos(atualizacao.usuario_id, atualizacao.disciplina_id)
         motivacao = self._validar_motivacao(atualizacao.motivacao)
-        status = self._validar_status(atualizacao.status)
+        status    = self._validar_status(atualizacao.status)
 
         inscricao = InscricaoMonitoria(
             id=id,
@@ -78,46 +83,40 @@ class InscricaoMonitoriaService:
     def remover_inscricao(self, id: UUID) -> None:
         removida = self._inscricao_repo.delete(id)
         if not removida:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Inscricao de monitoria com id '{id}' nao encontrada."
+            raise InscricaoNaoEncontradaException(
+                f"Inscrição de monitoria com id '{id}' não encontrada."
             )
 
     def contar_inscricoes(self) -> int:
         return self._inscricao_repo.count()
 
+    # ------------------------------------------------------------------
+    # Helpers privados
+    # ------------------------------------------------------------------
+
     def _validar_relacionamentos(self, usuario_id: UUID, disciplina_id: UUID) -> None:
         if self._usuario_repo.find_by_id(usuario_id) is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Usuario com id '{usuario_id}' nao encontrado."
+            raise UsuarioNaoEncontradoException(
+                f"Usuário com id '{usuario_id}' não encontrado."
             )
         disciplina_existe = any(
-            disciplina.id == disciplina_id
-            for disciplina in self._disciplina_repo.find_all()
+            d.id == disciplina_id for d in self._disciplina_repo.find_all()
         )
         if not disciplina_existe:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Disciplina com id '{disciplina_id}' nao encontrada."
+            raise DisciplinaNaoEncontradaException(
+                f"Disciplina com id '{disciplina_id}' não encontrada."
             )
 
     def _validar_motivacao(self, motivacao: str) -> str:
         if not motivacao or not motivacao.strip():
-            raise HTTPException(
-                status_code=400,
-                detail="Motivacao e obrigatoria."
-            )
+            raise InscricaoMotivacaoVaziaException()
         return motivacao.strip()
 
     def _validar_status(self, status: str) -> str:
         status_normalizado = status.strip().upper() if status else ""
         status_validos = {"PENDENTE", "APROVADA", "REJEITADA"}
         if status_normalizado not in status_validos:
-            raise HTTPException(
-                status_code=400,
-                detail="Status deve ser PENDENTE, APROVADA ou REJEITADA."
-            )
+            raise InscricaoStatusInvalidoException()
         return status_normalizado
 
     def _to_response(self, inscricao: InscricaoMonitoria) -> InscricaoMonitoriaResponse:

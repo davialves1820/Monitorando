@@ -20,7 +20,10 @@ from app.exceptions import (
     UsuarioJaEMonitorException,
     PromocaoApenasParaDiscentesException,
     DisciplinaVinculadaObrigatoriaException,
-    UsuarioNaoEMonitorException
+    UsuarioNaoEMonitorException,
+    LoginException,
+    SenhaException,
+    CredenciaisInvalidasException,
 )
 
 router = APIRouter(
@@ -161,5 +164,12 @@ def revogar_monitor(
 
 @router.post("/login", status_code=status.HTTP_200_OK, summary="Realizar login do usuário")
 def login(login_data: LoginRequest, request: Request):
-    usuario = request.app.state.usuario_service.login_usuario(login_data.login, login_data.senha)
+    try:
+        usuario = request.app.state.usuario_service.login_usuario(login_data.login, login_data.senha)
+    except CredenciaisInvalidasException as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.message)
+    except LoginException as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
+    except SenhaException as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
     return UsuarioResponse.from_domain(usuario)

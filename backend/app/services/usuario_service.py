@@ -1,6 +1,7 @@
 from typing import Union, Optional
 from uuid import UUID
 from app.factories.usuario_factory import UsuarioFactory
+from app.business.relatorio_acesso_usuarios import RelatorioAcessoUsuariosHTML
 from app.models.enums import TipoPerfil
 from app.models.usuario import UsuarioCadastro, Discente, Docente, UsuarioResponse, PaginatedUsuarios, Monitor, PromoverRequest
 from app.repositories.abstract_usuario_repository import AbstractUsuarioRepository
@@ -229,3 +230,7 @@ class UsuarioService:
         if usuario.senha != senha:
             raise CredenciaisInvalidasException()
         return usuario
+
+    def gerar_relatorio_acesso_html(self) -> str:
+        usuarios = self._repo.find_all()
+        return RelatorioAcessoUsuariosHTML().gerar(usuarios)

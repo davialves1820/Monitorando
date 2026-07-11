@@ -13,6 +13,7 @@ from app.routers import usuario_router
 from app.routers.disciplinas import router as disciplinas_router
 from app.routers.facade_router import router as facade_router
 from app.routers.inscricao_monitoria_router import router as inscricoes_monitoria_router
+from app.routers.relatorio_router import router as relatorio_router
 from app.exceptions import (
     LoginException,
     SenhaException,
@@ -166,6 +167,7 @@ app.include_router(usuario_router)
 app.include_router(disciplinas_router)
 app.include_router(inscricoes_monitoria_router)
 app.include_router(facade_router)
+app.include_router(relatorio_router)
 
 
 @app.get("/")

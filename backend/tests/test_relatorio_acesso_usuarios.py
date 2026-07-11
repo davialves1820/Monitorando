@@ -4,6 +4,7 @@ from app.business.relatorio_acesso_usuarios import (
     EstatisticasAcessoUsuarios,
     RelatorioAcessoUsuariosHTML,
 )
+from app.main import app
 from app.models.enums import TipoPerfil
 from app.models.usuario import Discente, Docente, Monitor
 
@@ -77,3 +78,40 @@ def test_relatorio_html_usa_template_method_para_montar_documento():
     assert "<dt>Total de usu&aacute;rios</dt><dd>1</dd>" in html
     assert "<dt>Usu&aacute;rios ativos</dt><dd>1</dd>" in html
     assert "<tr><td>DISCENTE</td><td>1</td></tr>" in html
+
+
+def test_endpoint_retorna_relatorio_html_de_acesso(client):
+    repo = app.state.usuario_service._repo
+    repo.add(
+        Discente(
+            id=uuid4(),
+            nome="Aluno",
+            login="aluno",
+            email="aluno@discente.ufpb.br",
+            senha="Password123!",
+            perfil=TipoPerfil.DISCENTE,
+            ativo=True,
+            matricula="2023000001",
+        )
+    )
+    repo.add(
+        Docente(
+            id=uuid4(),
+            nome="Docente",
+            login="docente",
+            email="docente@ufpb.br",
+            senha="Password123!",
+            perfil=TipoPerfil.DOCENTE,
+            ativo=False,
+        )
+    )
+
+    response = client.get("/relatorios/acessos/usuarios.html")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "<dt>Total de usu&aacute;rios</dt><dd>2</dd>" in response.text
+    assert "<dt>Usu&aacute;rios ativos</dt><dd>1</dd>" in response.text
+    assert "<dt>Usu&aacute;rios inativos</dt><dd>1</dd>" in response.text
+    assert "<tr><td>DISCENTE</td><td>1</td></tr>" in response.text
+    assert "<tr><td>DOCENTE</td><td>1</td></tr>" in response.text

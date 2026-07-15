@@ -226,3 +226,4 @@ Ao atuar neste repositório, siga adicionalmente:
 4. **Prefira edições cirúrgicas** a reescritas completas de arquivos existentes
 5. **Documente suposições** no corpo do commit quando o requisito for ambíguo
 6. **Não invente dependências** externas sem registrar no PR por que são necessárias
+7. **Use o Graphify para explorar o código:** antes de editar uma classe, rode `graphify explain <Classe>` ou `graphify query "<pergunta>"` para entender o contexto, referências e fluxos (quem chama quem), em vez de abrir arquivos um a um. Os repositórios já possuem os grafos construídos localmente para acelerar sua navegação cross-repo.

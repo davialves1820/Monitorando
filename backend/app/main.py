@@ -25,6 +25,9 @@ from app.exceptions import (
     EmailJaCadastradoException,
     DisciplinaCodigoJaExisteException,
 )
+from app.utils.logger.factory import get_logger
+
+logger = get_logger()
 
 
 @asynccontextmanager
@@ -71,7 +74,7 @@ async def lifespan(app: FastAPI):
         from app.database import inicializar_banco
         inicializar_banco()
 
-    print(f"INFO:  [BOOT] REPO_BACKEND={backend.upper()} — repositórios inicializados.")
+    logger.info(f"[BOOT] REPO_BACKEND={backend.upper()} — repositórios inicializados.")
     yield
 
 
@@ -93,6 +96,7 @@ app.add_middleware(
 
 @app.exception_handler(LoginException)
 async def login_exception_handler(request: Request, exc: LoginException):
+    logger.warning(f"Login falhou: {exc.message if hasattr(exc, 'message') else str(exc)}")
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content={"detail": exc.message if hasattr(exc, "message") else str(exc)}
@@ -109,6 +113,7 @@ async def senha_exception_handler(request: Request, exc: SenhaException):
 
 @app.exception_handler(DatabaseException)
 async def database_exception_handler(request: Request, exc: DatabaseException):
+    logger.error(f"Database error: {exc.message if hasattr(exc, 'message') else str(exc)}")
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": exc.message if hasattr(exc, "message") else str(exc)}

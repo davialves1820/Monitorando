@@ -114,7 +114,11 @@ def test_facade_singleton_controller_retorna_quantidade_total_de_entidades(clien
     _criar_inscricao(client)  # cria 1 usuario + 1 disciplina + 1 inscricao
 
     # Singleton: duas instanciações retornam o mesmo objeto
-    assert FacadeSingletonController() is FacadeSingletonController()
+    facade = FacadeSingletonController()
+    assert facade is FacadeSingletonController()
+    assert facade.execute_command(
+        FacadeSingletonController.QUANTIDADE_ENTIDADES_CADASTRADAS
+    ) == 3
 
     response = client.get("/facade/quantidade-entidades")
     assert response.status_code == 200

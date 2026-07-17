@@ -58,3 +58,6 @@ class DisciplinaService:
             )
             for d in disciplinas_db
         ]
+
+    def contar_disciplinas(self) -> int:
+        return len(self._repo.find_all())

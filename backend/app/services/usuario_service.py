@@ -115,6 +115,9 @@ class UsuarioService:
             usuarios=usuarios_response,
         )
 
+    def contar_usuarios(self) -> int:
+        return len(self._repo.find_all())
+
     def buscar_usuarios(
         self,
         nome: Optional[str],

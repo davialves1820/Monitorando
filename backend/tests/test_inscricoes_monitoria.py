@@ -82,6 +82,52 @@ def test_atualizar_inscricao_monitoria(client: TestClient):
     assert data["status"] == "APROVADA"
 
 
+def test_desfazer_atualizacao_inscricao_monitoria_restaura_estado_anterior(client: TestClient):
+    inscricao, usuario, disciplina = _criar_inscricao(client)
+
+    response = client.put(f"/inscricoes-monitoria/{inscricao['id']}", json={
+        "usuario_id": usuario["id"],
+        "disciplina_id": disciplina["id"],
+        "motivacao": "Atualizei minha motivacao para a monitoria.",
+        "status": "APROVADA",
+    })
+    assert response.status_code == 200
+
+    desfazer = client.post(f"/inscricoes-monitoria/{inscricao['id']}/desfazer-atualizacao")
+    assert desfazer.status_code == 200
+    data = desfazer.json()
+    assert data["motivacao"] == inscricao["motivacao"]
+    assert data["status"] == inscricao["status"]
+
+    detalhe = client.get(f"/inscricoes-monitoria/{inscricao['id']}")
+    assert detalhe.json()["motivacao"] == inscricao["motivacao"]
+    assert detalhe.json()["status"] == inscricao["status"]
+
+
+def test_desfazer_atualizacao_inscricao_monitoria_so_permite_a_ultima(client: TestClient):
+    inscricao, usuario, disciplina = _criar_inscricao(client)
+
+    client.put(f"/inscricoes-monitoria/{inscricao['id']}", json={
+        "usuario_id": usuario["id"],
+        "disciplina_id": disciplina["id"],
+        "motivacao": "Primeira atualizacao.",
+        "status": "APROVADA",
+    })
+
+    primeiro_desfazer = client.post(f"/inscricoes-monitoria/{inscricao['id']}/desfazer-atualizacao")
+    assert primeiro_desfazer.status_code == 200
+
+    segundo_desfazer = client.post(f"/inscricoes-monitoria/{inscricao['id']}/desfazer-atualizacao")
+    assert segundo_desfazer.status_code == 409
+
+
+def test_desfazer_atualizacao_inscricao_monitoria_inexistente(client: TestClient):
+    response = client.post(
+        "/inscricoes-monitoria/00000000-0000-0000-0000-000000000001/desfazer-atualizacao"
+    )
+    assert response.status_code == 404
+
+
 def test_remover_inscricao_monitoria(client: TestClient):
     inscricao, _, _ = _criar_inscricao(client)
 

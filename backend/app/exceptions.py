@@ -169,3 +169,8 @@ class InscricaoStatusInvalidoException(InscricaoMonitoriaException):
     def __init__(self, message="Status deve ser PENDENTE, APROVADA ou REJEITADA."):
         super().__init__(message)
 
+
+class InscricaoSemAtualizacaoParaDesfazerException(InscricaoMonitoriaException):
+    def __init__(self, message="Não há atualização anterior para desfazer nesta inscrição."):
+        super().__init__(message)
+

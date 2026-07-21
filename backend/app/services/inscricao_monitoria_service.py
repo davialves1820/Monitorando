@@ -1,6 +1,7 @@
 from typing import List
 from uuid import UUID
 
+from app.business.memento import InscricaoMonitoriaCaretaker
 from app.models.inscricao_monitoria import (
     InscricaoMonitoria,
     InscricaoMonitoriaAtualizacao,
@@ -13,6 +14,7 @@ from app.repositories.abstract_usuario_repository import AbstractUsuarioReposito
 from app.exceptions import (
     InscricaoNaoEncontradaException,
     InscricaoMotivacaoVaziaException,
+    InscricaoSemAtualizacaoParaDesfazerException,
     InscricaoStatusInvalidoException,
     UsuarioNaoEncontradoException,
     DisciplinaNaoEncontradaException,
@@ -33,6 +35,9 @@ class InscricaoMonitoriaService:
         self._inscricao_repo  = inscricao_repo
         self._usuario_repo    = usuario_repo
         self._disciplina_repo = disciplina_repo
+        # Caretaker do padrao Memento: guarda o estado anterior a ultima
+        # atualizacao de cada inscricao, para permitir desfaze-la.
+        self._caretaker = InscricaoMonitoriaCaretaker()
 
     def cadastrar_inscricao(self, cadastro: InscricaoMonitoriaCadastro) -> InscricaoMonitoria:
         self._validar_relacionamentos(cadastro.usuario_id, cadastro.disciplina_id)
@@ -65,10 +70,14 @@ class InscricaoMonitoriaService:
         id: UUID,
         atualizacao: InscricaoMonitoriaAtualizacao,
     ) -> InscricaoMonitoria:
-        self.buscar_inscricao_por_id(id)
+        inscricao_atual = self.buscar_inscricao_por_id(id)
         self._validar_relacionamentos(atualizacao.usuario_id, atualizacao.disciplina_id)
         motivacao = self._validar_motivacao(atualizacao.motivacao)
         status    = self._validar_status(atualizacao.status)
+
+        # Memento: guarda o estado atual antes de sobrescreve-lo, para
+        # permitir desfazer apenas esta atualizacao.
+        self._caretaker.salvar(inscricao_atual.criar_memento())
 
         inscricao = InscricaoMonitoria(
             id=id,
@@ -80,12 +89,27 @@ class InscricaoMonitoriaService:
         self._inscricao_repo.update(inscricao)
         return inscricao
 
+    def desfazer_ultima_atualizacao(self, id: UUID) -> InscricaoMonitoria:
+        self.buscar_inscricao_por_id(id)
+
+        memento = self._caretaker.obter(id)
+        if memento is None:
+            raise InscricaoSemAtualizacaoParaDesfazerException()
+
+        inscricao_restaurada = InscricaoMonitoria.restaurar_memento(memento)
+        self._inscricao_repo.update(inscricao_restaurada)
+        # So e possivel desfazer a atualizacao mais recente: uma vez
+        # restaurado, o memento e descartado.
+        self._caretaker.descartar(id)
+        return inscricao_restaurada
+
     def remover_inscricao(self, id: UUID) -> None:
         removida = self._inscricao_repo.delete(id)
         if not removida:
             raise InscricaoNaoEncontradaException(
                 f"Inscrição de monitoria com id '{id}' não encontrada."
             )
+        self._caretaker.descartar(id)
 
     def contar_inscricoes(self) -> int:
         return self._inscricao_repo.count()

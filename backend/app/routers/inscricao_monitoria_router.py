@@ -10,6 +10,7 @@ from app.models.inscricao_monitoria import (
 from app.exceptions import (
     InscricaoNaoEncontradaException,
     InscricaoMotivacaoVaziaException,
+    InscricaoSemAtualizacaoParaDesfazerException,
     InscricaoStatusInvalidoException,
     UsuarioNaoEncontradoException,
     DisciplinaNaoEncontradaException,
@@ -51,6 +52,16 @@ def atualizar_inscricao(id: UUID, atualizacao: InscricaoMonitoriaAtualizacao, re
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
     except (InscricaoMotivacaoVaziaException, InscricaoStatusInvalidoException) as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
+
+
+@router.post("/{id}/desfazer-atualizacao", response_model=InscricaoMonitoriaResponse)
+def desfazer_atualizacao_inscricao(id: UUID, request: Request):
+    try:
+        return request.app.state.inscricao_monitoria_service.desfazer_ultima_atualizacao(id)
+    except InscricaoNaoEncontradaException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
+    except InscricaoSemAtualizacaoParaDesfazerException as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=e.message)
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)

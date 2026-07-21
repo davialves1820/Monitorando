@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net">
   <diagram id="4jWMgy2ygtaHkXt0XQ-_" name="Página-1">
-    <mxGraphModel dx="981" dy="568" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1850" pageHeight="2650" math="0" shadow="0">
+    <mxGraphModel dx="981" dy="568" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2500" pageHeight="2650" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -294,11 +294,11 @@
         <mxCell id="facade_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=13;fontColor=#000000;" value="&lt;b&gt;FacadeSingletonController&lt;/b&gt;" vertex="1">
           <mxGeometry height="30" width="340" x="610" y="50" as="geometry" />
         </mxCell>
-        <mxCell id="facade_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- _instance : FacadeSingletonController = None&#xa;+ usuario_service : UsuarioService&#xa;+ disciplina_service : DisciplinaService&#xa;+ inscricao_monitoria_service : InscricaoMonitoriaService" vertex="1">
-          <mxGeometry height="60" width="340" x="610" y="80" as="geometry" />
+        <mxCell id="facade_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- _instance : FacadeSingletonController = None&#xa;- _commands : Dict[str, Command[Any]]" vertex="1">
+          <mxGeometry height="45" width="340" x="610" y="80" as="geometry" />
         </mxCell>
-        <mxCell id="facade_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- __init__() : void&#xa;+ initialize(usuario_service, disciplina_service, inscricao_monitoria_service) : void&#xa;+ quantidade_entidades_cadastradas() : int" vertex="1">
-          <mxGeometry height="90" width="340" x="610" y="140" as="geometry" />
+        <mxCell id="facade_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- __new__() : FacadeSingletonController&#xa;+ initialize(usuario_service, disciplina_service, inscricao_monitoria_service) : void&#xa;+ register_command(nome : str, command : Command) : void&#xa;+ execute_command(nome : str) : Any&#xa;+ quantidade_entidades_cadastradas() : int" vertex="1">
+          <mxGeometry height="100" width="340" x="610" y="125" as="geometry" />
         </mxCell>
         <mxCell id="nota_singleton" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffc0;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;fontColor=#000000;shape=mxgraph.general.annotation;" value="«Singleton»&#xa;instancia unica controlada&#xa;por getInstance()&#xa;&#xa;«Facade»&#xa;ponto de entrada unico&#xa;para todos os servicos" vertex="1">
           <mxGeometry height="120" width="220" x="1050" y="70" as="geometry" />
@@ -524,6 +524,89 @@
         </mxCell>
         <mxCell id="persist_insc_lbl" connectable="0" parent="persist_insc" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;background=#ffffff;" value="&lt;&lt;persiste&gt;&gt;" vertex="1">
           <mxGeometry relative="1" x="-0.1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="band_command" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#666666;strokeWidth=2;verticalAlign=top;align=left;spacingLeft=10;spacingTop=8;fontSize=14;fontStyle=1;fontColor=#333333;dashed=0;" value="CAMADA DE NEGOCIO (BUSINESS) - Command" vertex="1">
+          <mxGeometry height="360" width="540" x="1900" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="cmd_iface_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#fff2cc;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;i&gt;&amp;laquo;interface&amp;raquo;&lt;/i&gt;&lt;br&gt;&lt;b&gt;Command&amp;lt;ResultadoCommand&amp;gt;&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="480" x="1930" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cmd_iface_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="+ execute() : ResultadoCommand" vertex="1">
+          <mxGeometry height="30" width="480" x="1930" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="cmd_impl_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f8cecc;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;QuantidadeEntidadesCadastradasCommand&lt;/b&gt;" vertex="1">
+          <mxGeometry height="30" width="480" x="1930" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="cmd_impl_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- _usuario_service : UsuarioService&#xa;- _disciplina_service : DisciplinaService&#xa;- _inscricao_monitoria_service : InscricaoMonitoriaService" vertex="1">
+          <mxGeometry height="55" width="480" x="1930" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="cmd_impl_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="+ execute() : int" vertex="1">
+          <mxGeometry height="30" width="480" x="1930" y="265" as="geometry" />
+        </mxCell>
+        <mxCell id="cmd_realiza" edge="1" parent="1" source="cmd_impl_title" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=block;endFill=0;strokeColor=#000000;entryX=0.5;entryY=1;entryDx=0;entryDy=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" target="cmd_iface_title">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="cmd_facade_edge" edge="1" parent="1" source="facade_ops" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;" target="cmd_iface_title">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1000" y="205" />
+              <mxPoint x="1000" y="75" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="cmd_facade_edge_lbl" connectable="0" parent="cmd_facade_edge" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;background=#ffffff;" value="&lt;&lt;registra/executa&gt;&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.1" as="geometry" />
+        </mxCell>
+        <mxCell id="cmd_dep_services" edge="1" parent="1" source="cmd_impl_attrs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#0033cc;fontColor=#0033cc;" target="ger_inscricao_title">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1900" y="380" />
+              <mxPoint x="1260" y="380" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="cmd_dep_services_lbl" connectable="0" parent="cmd_dep_services" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontColor=#0033cc;background=#ffffff;" value="&lt;&lt;usa Services&gt;&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="band_memento" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#666666;strokeWidth=2;verticalAlign=top;align=left;spacingLeft=10;spacingTop=8;fontSize=14;fontStyle=1;fontColor=#333333;dashed=0;" value="CAMADA DE NEGOCIO (BUSINESS) - Memento" vertex="1">
+          <mxGeometry height="470" width="540" x="1900" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="mem_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;InscricaoMonitoriaMemento&lt;/b&gt;&lt;br&gt;&lt;i&gt;(Memento)&lt;/i&gt;" vertex="1">
+          <mxGeometry height="40" width="480" x="1930" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="mem_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- id : UUID&#xa;- usuario_id : UUID&#xa;- disciplina_id : UUID&#xa;- motivacao : String&#xa;- status : String  {frozen dataclass, imutavel}" vertex="1">
+          <mxGeometry height="90" width="480" x="1930" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="caretaker_title" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#f5f5f5;align=center;verticalAlign=middle;fontSize=12;fontColor=#000000;" value="&lt;b&gt;InscricaoMonitoriaCaretaker&lt;/b&gt;&lt;br&gt;&lt;i&gt;(Caretaker)&lt;/i&gt;" vertex="1">
+          <mxGeometry height="40" width="480" x="1930" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="caretaker_attrs" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="- _ultimo_estado : Dict[UUID, InscricaoMonitoriaMemento]" vertex="1">
+          <mxGeometry height="25" width="480" x="1930" y="640" as="geometry" />
+        </mxCell>
+        <mxCell id="caretaker_ops" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffff;align=left;verticalAlign=top;spacingLeft=6;fontSize=11;fontColor=#000000;" value="+ salvar(memento : InscricaoMonitoriaMemento) : void&#xa;+ obter(id : UUID) : Optional[InscricaoMonitoriaMemento]&#xa;+ descartar(id : UUID) : void" vertex="1">
+          <mxGeometry height="60" width="480" x="1930" y="665" as="geometry" />
+        </mxCell>
+        <mxCell id="caretaker_guarda_mem" edge="1" parent="1" source="caretaker_ops" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;entryX=0.5;entryY=1;entryDx=0;entryDy=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" target="mem_attrs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="caretaker_guarda_mem_lbl" connectable="0" parent="caretaker_guarda_mem" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;background=#ffffff;" value="&lt;&lt;guarda&gt;&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.1" as="geometry" />
+        </mxCell>
+        <mxCell id="insc_service_caretaker" edge="1" parent="1" source="ger_inscricao_ops" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;" target="caretaker_title">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1850" y="600" />
+              <mxPoint x="1850" y="620" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="insc_service_caretaker_lbl" connectable="0" parent="insc_service_caretaker" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;background=#ffffff;" value="&lt;&lt;desfaz ultima atualizacao&gt;&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.1" as="geometry" />
+        </mxCell>
+        <mxCell id="nota_memento" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffc0;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;fontColor=#000000;shape=mxgraph.general.annotation;" value="InscricaoMonitoria e o Originator.&#xa;Caretaker mantem apenas o estado&#xa;imediatamente anterior a ultima&#xa;atualizacao (um memento por id) —&#xa;suficiente para desfazer a ultima&#xa;operacao, sem historico completo." vertex="1">
+          <mxGeometry height="120" width="480" x="1930" y="740" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

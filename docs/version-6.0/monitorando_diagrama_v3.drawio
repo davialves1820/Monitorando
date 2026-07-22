@@ -303,7 +303,7 @@
         <mxCell id="nota_singleton" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffc0;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;fontColor=#000000;shape=mxgraph.general.annotation;" value="«Singleton»&#xa;instancia unica controlada&#xa;por getInstance()&#xa;&#xa;«Facade»&#xa;ponto de entrada unico&#xa;para todos os servicos" vertex="1">
           <mxGeometry height="120" width="220" x="1050" y="70" as="geometry" />
         </mxCell>
-        <mxCell id="nota_total" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffc0;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;fontColor=#000000;shape=mxgraph.general.annotation;" value="getTotalEntidades() retorna:&#xa;{&#xa;  &#39;usuarios&#39;: int,&#xa;  &#39;disciplinas&#39;: int,&#xa;  &#39;monitores&#39;: int,&#xa;  &#39;docentes&#39;: int,&#xa;  &#39;discentes&#39;: int&#xa;}" vertex="1">
+        <mxCell id="nota_total" parent="1" style="text;html=1;strokeColor=#000000;fillColor=#ffffc0;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;fontColor=#000000;shape=mxgraph.general.annotation;" value="quantidade_entidades_cadastradas()&#xa;retorna int, somando:&#xa;usuarios + disciplinas + inscricoes&#xa;&#xa;implementado via Command&#xa;(ver banda Command)" vertex="1">
           <mxGeometry height="120" width="220" x="1050" y="220" as="geometry" />
         </mxCell>
         <mxCell id="nota_singleton_edge" edge="1" parent="1" source="nota_singleton" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;edgeStyle=none;dashed=1;endArrow=none;entryX=1;entryY=0.6;entryDx=0;entryDy=0;" target="facade_title" value="">
@@ -511,11 +511,6 @@
         </mxCell>
         <mxCell id="persist_disc_lbl" connectable="0" parent="persist_disc" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;background=#ffffff;" value="&lt;&lt;persiste&gt;&gt;" vertex="1">
           <mxGeometry relative="1" x="-0.1" as="geometry" />
-        </mxCell>
-        <mxCell id="lIFfj-eNcYkgBpbeby9y-1" connectable="0" parent="persist_disc" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Text" vertex="1">
-          <mxGeometry relative="1" x="-0.3727" y="4" as="geometry">
-            <mxPoint y="1" as="offset" />
-          </mxGeometry>
         </mxCell>
         <mxCell id="persist_insc" edge="1" parent="1" source="impl_insc_title" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;strokeColor=#000000;strokeColor=#b85450;fontColor=#b85450;" value="">
           <mxGeometry relative="1" as="geometry">
